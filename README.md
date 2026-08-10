@@ -45,6 +45,20 @@ code for what you just directed. It's real, not guessed.
 - **11.** Fine-tune & align — you spec the model+data; AI trains LoRA/DPO
 - **12.** Boss fight — you architect; AI builds; you ship + eval + serve on OVH2
 
+## 🛠️ Track 2 — Build the Full LLM (missions 13–21)
+Track 1 taught you to *understand and direct* AI engineering. Track 2 makes you *build
+the thing itself*: a complete, tiny-but-real LLM you train from scratch, guided by the
+Raschka codex PDFs in `pdfs/`. AI writes the scripts; you run, read, and own them.
+- **13.** Intro & setup — config + corpus
+- **14.** Tokenizer from scratch (char-level)
+- **15.** Dataset & DataLoader (sliding context windows)
+- **16.** The full GPT-style model
+- **17.** Training loop (loss curve you watch fall)
+- **18.** Generate text (sampling on your own weights)
+- **19.** Evaluate it (accuracy + perplexity vs random)
+- **20.** Instruction-tune it (make it an agent brain)
+- **21.** Boss fight — ship your LLM as a serving endpoint
+
 ## 📦 In the box
 - `pdfs/` — 66 Raschka code companion PDFs (ch2–7 + standalone-model bonus). Your codex.
 - Companions: `~/linux-learning-workbooks/` (fundamentals), `~/hermes-stack-workbooks/`

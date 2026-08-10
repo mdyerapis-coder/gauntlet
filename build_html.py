@@ -220,7 +220,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 </header>
 <div class="wrap">
   <div id="home">
-    <div class="banner">Progress saves in this browser (localStorage). The built-in <b>AI Coder</b> can run prompts and expand the gauntlet — configure it via ⚙ (top-right) to point at OpenCode or a cloud model. Keys stay on your machine.</div>
+    <div class="banner">Progress saves in this browser (localStorage). The built-in <b>AI Coder</b> can run prompts and expand the gauntlet — configure it via ⚙ (top-right) to point at OpenCode or a cloud model. Keys stay on your machine.<br><b>Two tracks:</b> 00–12 = understand &amp; direct AI engineering. 13–21 = <b>build a full tiny LLM from scratch</b> (tokenizer → train → serve).</div>
     <div class="toolbar">
       <button class="primary" id="playBtn">▶ Play guided tour</button>
       <button id="expandBtn">✨ Expand gauntlet (AI)</button>
