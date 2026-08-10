@@ -12,11 +12,13 @@ to the animated SVG emblems / skip the video.
 
 ---
 
-## 🎬 Between-track videos (3 files) — the chapter breaks
+## 🎬 Between-track videos (5 files) — the chapter breaks
 These play fullscreen when you reach a new track (or finish):
-- `track1-2.mp4` → plays when you open **Mission 13** (Track 2 start)
-- `track2-3.mp4` → plays when you open **Mission 22** (Track 3 start)
-- `finale.mp4`     → plays when you complete **Mission 30** (all tasks ticked)
+- `intro.mp4`     → plays on first launch (once per browser)
+- `track1-2.mp4`  → plays when you open **Mission 13** (Track 2 start)
+- `track2-3.mp4`  → plays when you open **Mission 22** (Track 3 start)
+- `track3-4.mp4`  → plays when you open **Mission 31** (Track 4 start)
+- `finale.mp4`    → plays when you complete **Mission 37** (all tasks ticked)
 
 **track1-2.mp4** — *From understanding to building.* A glowing schematic of an abstract AI
 "brain" of light dissolves and reforges itself into a roaring forge where raw text-ore is
@@ -32,13 +34,21 @@ living, thinking agent that reaches out and acts. Camera orbits as the eye + gea
 transformer tower, the multimodal eye, and the agent gear-loop spiral together and launch
 into a burst of light. Triumphant, soaring. 8–12s, no text.
 
+**intro.mp4** — *Opening title.* A glowing forge hall in deep violet/cyan, floating code
+glyphs drifting upward like embers, a massive stone shield emblem etched with circuit traces
+at center. Slow camera push-in; looping ambient; no text.
+
+**track3-4.mp4** — *From agent to production.* The multimodal agent emblem folds into a tower
+of server-pillars wrapped in orbiting health/metrics rings, passing through a glowing deploy
+gate and launching as a secured, observable service. 6–10s, no text.
+
 > If Grok has no video mode, generate a single hero *image* for each instead and save as
 > `track1-2.png` / `track2-3.png` / `finale.png` — the app will still show them (update
 > `TRACK_VIDEO` filenames in gauntlet.html if you use .png). Or skip; the SVG emblems cover it.
 
 ---
 
-## 🖼️ Per-mission hero images (31 files: 00.png … 30.png)
+## 🖼️ Per-mission hero images (38 files: 00.png … 37.png)
 Shown in the mission hero banner + cinematic divider (falls back to SVG if missing).
 
 ### Track 1 — Understand & Direct AI Engineering
@@ -109,6 +119,22 @@ Shown in the mission hero banner + cinematic divider (falls back to SVG if missi
   multimodal agent demo as one unified being.
 - **30** (Boss) A fully assembled multimodal-agent emblem — eye + gear + shield — launching in a
   burst of light; the grand finale; everything you built, whole.
+
+### Track 4 — Ship to Production
+- **31** A glowing rocket/arrow launching upward into a tall server-pillar; the moment code goes
+  live; deployment as ascent.
+- **32** A radar sweep over a dark field with a pulsing metrics node; rings of observability
+  (logs/metrics/traces) radiating outward; clarity through data.
+- **33** A solid shield emblem with a glowing padlock at its center; permission lines radiating
+  as a guarded boundary; security as a ward.
+- **34** A lightning bolt striking a speed-gauge arc; cost and latency as energy and motion;
+  efficiency made visible.
+- **35** A circular seal bearing a glowing checkmark; an eval gate that passes or fails with
+  light; trust earned by evidence.
+- **36** Three floating plugin blocks connected by bridging beams of light; a tool protocol as
+  modular, extensible architecture; scale through composition.
+- **37** (Boss) The full-stack emblem — shield + transformer tower + multimodal eye + agent
+  gear-loop — spiraling and launching in a burst of light; the whole system, live.
 
 ---
 

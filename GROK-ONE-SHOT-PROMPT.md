@@ -14,7 +14,7 @@ atmospheric background, volumetric haze, soft rim lighting, "arcane-tech codex" 
 glowing circuitry mixed with classical forge/alchemy imagery. NO text, NO letters, NO
 watermarks, NO UI elements.
 
-Generate these 35 assets:
+Generate these 44 assets:
 
 IMAGES (16:9, save as the exact filename):
 00.png — lone engineer at a glowing crossroads inside a vast dark library of living
@@ -80,6 +80,20 @@ IMAGES (16:9, save as the exact filename):
   multimodal agent demo as one unified being.
 30.png — (boss) fully assembled multimodal-agent emblem — eye + gear + shield — launching in
   a burst of light; the grand finale.
+31.png — a glowing rocket/arrow launching upward into a tall server-pillar; the moment code
+  goes live; deployment as ascent.
+32.png — a radar sweep over a dark field with a pulsing metrics node; rings of observability
+  (logs/metrics/traces) radiating outward; clarity through data.
+33.png — a solid shield emblem with a glowing padlock at its center; permission lines
+  radiating as a guarded boundary; security as a ward.
+34.png — a lightning bolt striking a speed-gauge arc; cost and latency as energy and motion;
+  efficiency made visible.
+35.png — a circular seal bearing a glowing checkmark; an eval gate that passes or fails with
+  light; trust earned by evidence.
+36.png — three floating plugin blocks connected by bridging beams of light; a tool protocol
+  as modular, extensible architecture; scale through composition.
+37.png — (boss) the full-stack emblem — shield + transformer tower + multimodal eye + agent
+  gear-loop — spiraling and launching in a burst of light; the whole system, live.
 
 VIDEOS (6–12s each, save as the exact filename):
 intro.mp4 — opening title: a glowing forge hall in deep violet/cyan, floating code glyphs
@@ -91,14 +105,17 @@ track1-2.mp4 — from understanding to building: a glowing schematic of an abstr
 track2-3.mp4 — from model to agent: the completed LLM spire opens a luminous eye (multimodal
   vision) while a gear of tools clicks into its side; the static tower becomes a living,
   thinking agent that reaches out and acts; camera orbits as eye + gear awaken; 6–10s; no text.
+track3-4.mp4 — from agent to production: the multimodal agent emblem folds into a tower of
+  server-pillars with orbiting health/metrics rings and a glowing deploy gate; it launches as
+  a secured, observable service; 6–10s; no text.
 finale.mp4 — the whole gauntlet complete: shield emblem, transformer tower, multimodal eye,
   and agent gear-loop spiral together and launch into a burst of light; triumphant, soaring;
   8–12s; no text.
 
-Return all 35 files. Then zip them into "gauntlet-media.zip" if your environment supports
-packaging; otherwise list the 35 filenames so I can zip them locally.
+Return all 44 files. Then zip them into "gauntlet-media.zip" if your environment supports
+packaging; otherwise list the 44 filenames so I can zip them locally.
 ────────────────────────────────────────────────────────
 
 NOTE: If Grok returns the files but can't make the zip, run this in the folder where you
 saved them (see zip_media.sh / zip_media.bat included with these prompts):
-  zip gauntlet-media.zip 00.png 01.png ... 30.png intro.mp4 track1-2.mp4 track2-3.mp4 finale.mp4
+  zip gauntlet-media.zip 00.png 01.png ... 30.png 31.png 32.png 33.png 34.png 35.png 36.png 37.png intro.mp4 track1-2.mp4 track2-3.mp4 track3-4.mp4 finale.mp4
