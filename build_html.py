@@ -222,6 +222,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   .divider{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:radial-gradient(circle at 50% 40%, #1a1140 0%, #0a0d14 70%);color:#fff;overflow:hidden;animation:gaunt-fade .5s ease}
   .divider .emblem{width:min(46vw,260px);height:min(46vw,260px);animation:gaunt-rise .7s ease, gaunt-float 5s ease-in-out 1s infinite}
+  .divider .hero-img{width:min(46vw,300px);height:auto;border-radius:16px;box-shadow:0 0 40px rgba(140,110,255,.4);animation:gaunt-rise .7s ease, gaunt-float 5s ease-in-out 1s infinite}
   .divider .mtitle{margin-top:18px;font-size:22px;letter-spacing:.5px;animation:gaunt-rise .8s ease;text-align:center;padding:0 16px}
   .divider .mtrack{font-size:12px;color:#a99fff;margin-top:6px;animation:gaunt-rise 1s ease}
   .divider .skip{position:absolute;bottom:26px;font-size:12px;color:#7c7c9a;animation:gaunt-pulse 2s ease-in-out infinite}
@@ -233,6 +234,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   .hero{display:flex;align-items:center;gap:16px;margin:6px 0 14px;padding:14px;border:1px solid var(--line);border-radius:14px;
     background:linear-gradient(135deg,#14102e,#0c0f16);animation:gaunt-rise .6s ease}
   .hero svg{width:74px;height:74px;flex:0 0 auto}
+  .hero .hero-img{width:120px;height:80px;object-fit:cover;border-radius:10px;flex:0 0 auto;box-shadow:0 0 20px rgba(140,110,255,.35)}
   .hero .htext{font-size:13px;color:var(--dim)}
   .hero .htext b{color:var(--txt)}
   .lean-toggle{font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
@@ -422,13 +424,21 @@ function EMBLEM(num){
   return wrap(body);
 }
 
+// Hero visual: prefer media/<num>.png if present, else the inline SVG emblem.
+// In the single-file app opened from file://, media/ is a sibling folder.
+function HERO_VISUAL(num){
+  const img = `<img class="hero-img" src="media/${num}.png" alt=""
+    onerror="this.outerHTML=EMBLEM('${num}')" />`;
+  return img;
+}
+
 // Cinematic divider shown briefly before a mission opens.
 const DIVIDER_MS = 1500;
 function playDivider(num){
   if(localStorage.getItem("gauntlet.lean")==="1"){ renderMissionNow(num); return; }
   const ov = document.createElement("div");
   ov.className="divider";
-  ov.innerHTML = `<div class="ring"></div>${EMBLEM(num)}
+  ov.innerHTML = `<div class="ring"></div>${HERO_VISUAL(num)}
     <div class="mtitle">${MISSION_TITLE(num)}</div>
     <div class="mtrack">${missionTrack(num)}</div>
     <div class="skip" onclick="renderMissionNow('${num}')">tap to skip →</div>`;
@@ -451,7 +461,7 @@ function renderMissionNow(num){
   const el = document.getElementById("mission");
   el.classList.remove("hidden");
   let html = `<div class="back" onclick="renderHome()">← All missions</div>`;
-  html += `<div class="hero">${EMBLEM(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}</div></div>`;
+  html += `<div class="hero">${HERO_VISUAL(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}</div></div>`;
   html += m.html;
   if(m.prompts.length){
     html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>`;
