@@ -14,7 +14,7 @@ atmospheric background, volumetric haze, soft rim lighting, "arcane-tech codex" 
 glowing circuitry mixed with classical forge/alchemy imagery. NO text, NO letters, NO
 watermarks, NO UI elements.
 
-Generate these 44 assets:
+Generate these 44 assets (38 hero images + 6 videos):
 
 IMAGES (16:9, save as the exact filename):
 00.png — lone engineer at a glowing crossroads inside a vast dark library of living
@@ -95,7 +95,7 @@ IMAGES (16:9, save as the exact filename):
 37.png — (boss) the full-stack emblem — shield + transformer tower + multimodal eye + agent
   gear-loop — spiraling and launching in a burst of light; the whole system, live.
 
-VIDEOS (6–12s each, save as the exact filename):
+VIDEOS (6 files total — 1 intro + 5 between-track/finale, 6–12s each, save as the exact filename):
 intro.mp4 — opening title: a glowing forge hall in deep violet/cyan, floating code glyphs
   drifting upward like embers, a massive stone shield emblem etched with circuit traces at
   center; slow camera push-in; looping ambient; no text.

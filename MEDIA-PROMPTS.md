@@ -12,13 +12,15 @@ to the animated SVG emblems / skip the video.
 
 ---
 
-## 🎬 Between-track videos (5 files) — the chapter breaks
-These play fullscreen when you reach a new track (or finish):
+## 🎬 Cinematic videos (6 files total) — intro + between-track breaks
+The gauntlet plays **6 videos**. They all play fullscreen:
 - `intro.mp4`     → plays on first launch (once per browser)
 - `track1-2.mp4`  → plays when you open **Mission 13** (Track 2 start)
 - `track2-3.mp4`  → plays when you open **Mission 22** (Track 3 start)
 - `track3-4.mp4`  → plays when you open **Mission 31** (Track 4 start)
 - `finale.mp4`    → plays when you complete **Mission 37** (all tasks ticked)
+
+That is 1 intro + 5 between-track/finale videos = **6 total**. (The app's `TRACK_VIDEO` map keys on missions 13, 22, 31; intro fires on load; finale on Mission 37 completion.)
 
 **track1-2.mp4** — *From understanding to building.* A glowing schematic of an abstract AI
 "brain" of light dissolves and reforges itself into a roaring forge where raw text-ore is
@@ -138,6 +140,7 @@ Shown in the mission hero banner + cinematic divider (falls back to SVG if missi
 
 ---
 
-**Tips:** Images 16:9; videos 6–12s. Name files exactly as listed. Drop them in `media/`.
-The app shows them in the hero + cinematic divider + track breaks; missing files fall back
-gracefully to the animated SVG emblems.
+**Tips:** 38 hero images (16:9, `00.png`…`37.png`) + 6 videos (6–12s: intro, track1-2,
+track2-3, track3-4, finale). Name files exactly as listed. Drop them in `media/`. The app
+shows them in the hero + cinematic divider + track breaks; missing files fall back gracefully
+to the animated SVG emblems (or skip the video).
