@@ -58,19 +58,34 @@
     padding:12px 14px;margin:12px 0;color:#cfe3ff;font-size:14px}
   footer{color:var(--dim);font-size:12px;text-align:center;margin-top:30px}
   kbd{background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
+  /* AI coder */
+  .gear{position:absolute;right:18px;top:16px}
+  .ai-result{background:#0b0f14;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;
+    white-space:pre-wrap;font-size:13px;max-height:420px;overflow:auto}
+  .codeblk{background:#0b0f14;border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;
+    white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+  .status{font-size:12px;color:var(--yellow);margin-left:8px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:20}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(520px,92vw);max-height:88vh;overflow:auto}
+  .modal label{display:block;font-size:12px;color:var(--dim);margin:12px 0 4px}
+  .modal input,.modal select{width:100%;background:#0b0f14;border:1px solid var(--line);color:var(--txt);
+    border-radius:8px;padding:8px 10px;font-size:13px}
+  .modal .hint{font-size:11px;color:var(--dim);margin-top:4px}
+  .modal .row{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
 </style>
 </head>
 <body>
 <header>
   <h1>🛡️ The Agent Engineer's Gauntlet</h1>
   <div class="sub">Apprenticeship edition — AI writes the scripts, <b>you</b> direct &amp; understand. Click a mission to play.</div>
+  <button class="gear" id="aiGear" title="Configure AI coder">⚙ AI Coder</button>
 </header>
 <div class="wrap">
   <div id="home">
-    <div class="banner">Progress saves in this browser (localStorage). Nothing leaves your machine.
-      To reset: clear site data or click <kbd>Reset</kbd> below.</div>
+    <div class="banner">Progress saves in this browser (localStorage). The built-in <b>AI Coder</b> can run prompts and expand the gauntlet — configure it via ⚙ (top-right) to point at OpenCode or a cloud model. Keys stay on your machine.</div>
     <div class="toolbar">
       <button class="primary" id="playBtn">▶ Play guided tour</button>
+      <button id="expandBtn">✨ Expand gauntlet (AI)</button>
       <button id="resetBtn">Reset progress</button>
       <span id="overall" style="align-self:center;color:var(--dim)"></span>
     </div>
@@ -81,14 +96,53 @@
   <div id="mission" class="mission hidden"></div>
 </div>
 
+<!-- AI settings modal -->
+<div id="aiModal" class="modal hidden">
+  <div class="box">
+    <h3 style="margin-top:0">⚙ AI Coder settings</h3>
+    <label>Provider preset</label>
+    <select id="aiProvider">
+      <option value="opencode">OpenCode (local, OpenAI-compatible)</option>
+      <option value="openrouter">OpenRouter (broad model selection)</option>
+      <option value="anthropic">Anthropic (Claude, direct)</option>
+      <option value="openai">OpenAI</option>
+      <option value="local">Other local OpenAI-compatible (LM Studio / Ollama)</option>
+    </select>
+    <div class="hint">OpenCode: run it with its OpenAI-compatible server (e.g. <code>opencode serve</code> or its API port) and use <code>http://localhost:&lt;port&gt;/v1</code>. No key needed for local.</div>
+    <label>Base URL</label>
+    <input id="aiBase" placeholder="https://openrouter.ai/api/v1">
+    <label>API key (leave blank for local OpenCode)</label>
+    <input id="aiKey" type="password" placeholder="sk-... or empty for localhost">
+    <label>Model</label>
+    <input id="aiModel" placeholder="anthropic/claude-3.5-sonnet">
+    <div class="hint">OpenRouter model list: openrouter.ai/models. OpenCode uses whatever model you configured in its provider.</div>
+    <div class="row">
+      <button id="aiCancel">Cancel</button>
+      <button class="primary" id="aiSave">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const MISSIONS = [{"num": "00", "title": "Mission 00 — Orientation: Name the Gap", "html": "<h1>🛡️ Mission 00 — Orientation: Name the Gap</h1>\n<p><strong>🎯 Your job:</strong> You direct AI to build things (that's how HADA/HPS happened). This</p>\n<p>gauntlet makes you a <em>better director</em> — so you can tell your AI coder not just \"build X\"</p>\n<p>but \"build X <em>this way</em> because of Y.\" First, map the territory.</p>\n<p><strong>🧠 Why:</strong> Your repos treat \"the model\" as a black box. When an agent loops or a prompt</p>\n<p>silently degrades, you can only re-prompt. Understanding the internals turns re-prompting</p>\n<p>into <em>directing.</em></p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch03/01_main-chapter-code/ch03.pdf</code> — just the first page.</span></label></li>\n</ul>\n<p>      Register that the real, runnable attention code is sitting in this folder for you.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>Read (free, 10 min):</strong> https://www.anthropic.com/engineering/building-effective-agents</span></label></li>\n</ul>\n<p>      — note which patterns your HADA/Pantheon already use. One line each.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>Audit your own repos for implicit model assumptions</strong> (you directed these — what did</span></label></li>\n</ul>\n<p>      you assume about the model without checking?):</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span>HADA — assumes model behavior anywhere without verifying?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span>HPS — deploys models; does anything reason about token cost / context limits?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"5\"><span>llmfit — matches hardware; does it reason about <em>quality</em> or just fit?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"6\"><span>Pantheon — \"Gods share one brain\" — real retrieval/memory, or context-stuffing?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"7\"><span><strong>Set up your AI-coding arena</strong> (so future missions have a place to run what AI writes):</span></label></li>\n</ul>\n<p>      <code>python3 -m venv ~/ai-eng &amp;&amp; source ~/ai-eng/bin/activate &amp;&amp; pip install torch transformers sentence-transformers tiktoken</code></p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"8\"><span><strong>Create <code>loot.md</code></strong> with one paragraph: <em>\"Orchestration is ___. Engineering is ___.\"</em></span></label></li>\n</ul>\n<p><strong>🤖 Prompt to give your AI coder:</strong> none this mission — setup only. (Future missions use these.)</p>\n<p><strong>👀 What to watch for:</strong> when <code>pip install torch</code> finishes, run</p>\n<p><code>python -c \"import torch, transformers; print('arena ready', torch.__version__)\"</code> — if it</p>\n<p>prints a version, your arena works and AI can write+run code here.</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, name <strong>≥2 implicit model assumptions</strong> in your own repos.</p>\n<p>This is the gap you're here to close. No AI can do this for you — only you know what you built.</p>\n<p><strong>🏆 Done when:</strong> <code>loot.md</code> has your gap paragraph + ≥2 repo assumptions, and</p>\n<p><code>import torch</code> works in <code>~/ai-eng</code>.</p>", "nTasks": 9, "prompts": [], "pdfs": ["pdfs/ch03/01_main-chapter-code/ch03.pdf"], "done": "`import torch` works in `~/ai-eng`."}, {"num": "01", "title": "Mission 01 — Attention: Get AI to Build It, You Trace It", "html": "<h1>🛡️ Mission 01 — Attention: Get AI to Build It, You Trace It</h1>\n<p><strong>🎯 Your job:</strong> Attention is the engine of every LLM you orchestrate. You won't hand-code</p>\n<p>it — you'll <strong>direct your AI coder to build it</strong>, then <em>you</em> trace what it produced. The</p>\n<p>skill is reading AI's code, not writing it from scratch.</p>\n<p><strong>🧠 Why:</strong> HADA's release gate and Pantheon's \"Gods\" all sit on attention. When context is</p>\n<p>mis-weighted, the bug is here. If you can read the attention code your AI wrote, you can</p>\n<p>tell it <em>how to fix it</em> — that's directing, not copy-pasting.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch03/01_main-chapter-code/ch03.pdf</code> §3.1–3.3 (real attention</span></label></li>\n</ul>\n<p>      code). Don't copy — just see the shape.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>Bonus:</strong> <code>pdfs/ch03/02_bonus_efficient-multihead-attention/mha-implementations.pdf</code></span></label></li>\n</ul>\n<p>      (why naive attention is slow — you'll feel this in Mission 04's cost math).</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, write attention.py implementing single-head scaled dot-product</blockquote>\n<blockquote>attention in PyTorch: q,k,v → scores = q@k.T/sqrt(d) → softmax → weighted sum of v.</blockquote>\n<blockquote>Add a 3-token demo with random vectors, print the attention weights, and assert each</blockquote>\n<blockquote>row sums to ~1. Also add a causal (lower-triangular) mask variant and show future</blockquote>\n<blockquote>tokens get weight 0.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>Run it.</strong> Did weights sum to 1? Did the masked future token read 0? If not, **your</span></label></li>\n</ul>\n<p>      move** below.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>👀 What to watch for:</strong> the softmax over the <em>last</em> dimension; the mask must be</span></label></li>\n</ul>\n<p>      added <em>before</em> softmax as -inf. If AI got it wrong, that's your teaching moment.</p>\n<p><strong>✍️ Your move:</strong> Open the file AI wrote. In <code>loot.md</code>, <strong>explain in 4 bullet lines</strong> what</p>\n<p>each line of the attention function does (in your own words). Then, if the demo had a bug,</p>\n<p>write the <em>one-line fix</em> you'd tell AI to make. You directed a fix you understand.</p>\n<p><strong>🏆 Done when:</strong> AI's script runs, weights behave (sum-to-1, future=0), and <code>loot.md</code> has</p>\n<p>your 4-line explanation + (if needed) your directed fix.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, write attention.py implementing single-head scaled dot-product\nattention in PyTorch: q,k,v → scores = q@k.T/sqrt(d) → softmax → weighted sum of v.\nAdd a 3-token demo with random vectors, print the attention weights, and assert each\nrow sums to ~1. Also add a causal (lower-triangular) mask variant and show future\ntokens get weight 0.\""], "pdfs": ["pdfs/ch03/01_main-chapter-code/ch03.pdf", "pdfs/ch03/02_bonus_efficient-multihead-attention/mha-implementations.pdf"], "done": "your 4-line explanation + (if needed) your directed fix."}, {"num": "02", "title": "Mission 02 — Build the GPT: AI Assembles, You Map It", "html": "<h1>🛡️ Mission 02 — Build the GPT: AI Assembles, You Map It</h1>\n<p><strong>🎯 Your job:</strong> Get AI to assemble a full GPT block stack. You produce the **architecture</p>\n<p>map** — the thing HPS deploys and llmfit selects. Knowing the block diagram lets you tell</p>\n<p>AI <em>why</em> a served model misbehaves.</p>\n<p><strong>🧠 Why:</strong> You provision/serve these. Understanding the internal diagram means you can</p>\n<p>brief AI precisely (\"add a LayerNorm before the residual,\" not \"fix it\").</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch04/01_main-chapter-code/ch04.pdf</code> §4.1–4.3.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>Bonus:</strong> <code>pdfs/ch04/02_performance-analysis/flops-analysis.pdf</code> — how params → compute.</span></label></li>\n</ul>\n<p>      This is what llmfit <em>should</em> reason about.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, build gpt_model.py: token + positional embeddings, N transformer</blockquote>\n<blockquote>blocks (reuse attention.py's attention + an MLP), final LayerNorm + linear head to</blockquote>\n<blockquote>vocab. Print total parameter count. Do one forward pass on a 5-token sentence and</blockquote>\n<blockquote>assert output shape is (1, 5, vocab).\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>Run it.</strong> Confirm output shape. Read the param count.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>👀 What to watch for:</strong> residual connections (x + sublayer(x)) and where LayerNorm</span></label></li>\n</ul>\n<p>      sits (pre- vs post-). These details change behavior — note which AI chose.</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, draw the <strong>block-stack map in ASCII</strong> (embed → [block ×N →]</p>\n<p>→ head) and write the param count. Then: *if you were deploying this via HPS, what's one</p>\n<p>config knob you'd expose to the manifest?* (e.g. N blocks, context length). You're</p>\n<p>architecting the deploy surface, not coding it.</p>\n<p><strong>🏆 Done when:</strong> AI's model forward-passes, and <code>loot.md</code> has your ASCII map + the one</p>\n<p>deploy knob you'd expose.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, build gpt_model.py: token + positional embeddings, N transformer\nblocks (reuse attention.py's attention + an MLP), final LayerNorm + linear head to\nvocab. Print total parameter count. Do one forward pass on a 5-token sentence and\nassert output shape is (1, 5, vocab).\""], "pdfs": ["pdfs/ch04/01_main-chapter-code/ch04.pdf", "pdfs/ch04/02_performance-analysis/flops-analysis.pdf"], "done": "deploy knob you'd expose."}, {"num": "03", "title": "Mission 03 — Decoding & Sampling: AI Generates, You Tune the Knobs", "html": "<h1>🛡️ Mission 03 — Decoding &amp; Sampling: AI Generates, You Tune the Knobs</h1>\n<p><strong>🎯 Your job:</strong> Generation is a distribution → text. The knobs (temperature, top-p,</p>\n<p>repetition penalty) decide whether your agents sound sane or unhinged. AI builds the</p>\n<p>generator; <strong>you tune and explain why</strong> each knob does what it does.</p>\n<p><strong>🧠 Why:</strong> Pantheon's \"Gods\" go wild/repetitive? Usually sampling, not prompts. Agent</p>\n<p><em>tool-call</em> steps want temp≈0. Knowing this lets you tell AI <em>which setting</em> for which step.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch05/01_main-chapter-code/ch05.pdf</code> (generation/eval, §5.1).</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, load gpt2 via transformers. Write generate.py that takes a prompt and</blockquote>\n<blockquote>temperature, runs greedy (argmax) and multinomial sampling, and prints output at</blockquote>\n<blockquote>temp 0.2 / 0.8 / 1.2. Also print the raw logits shape for one step.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>Run it.</strong> Watch deterministic → creative → chaotic across the three temps.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>👀 What to watch for:</strong> greedy = temp→0 = the <em>most likely</em> path. That's what eval</span></label></li>\n</ul>\n<p>      AND tool-calls should use. Multinomial = \"roll the dice\" scaled by temp.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>Preview serving:</strong> skim <code>pdfs/ch05/11_qwen3/standalone-qwen3-plus-kvcache.pdf</code> —</span></label></li>\n</ul>\n<p>      KV-cache is what makes generation fast at serve time (revisit Mission 12).</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, define **temperature / top-p / repetition penalty /</p>\n<p>max_tokens in one line each<strong>, and state </strong>which temp you'd set for a HADA tool-call step</p>\n<p>vs a Pantheon creative \"God,\" and why.** You're setting policy AI will implement.</p>\n<p><strong>🏆 Done when:</strong> AI's generator runs at 3 temps, and <code>loot.md</code> has your 4 definitions + the</p>\n<p>temp policy for tool-calls vs creative Gods.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, load gpt2 via transformers. Write generate.py that takes a prompt and\ntemperature, runs greedy (argmax) and multinomial sampling, and prints output at\ntemp 0.2 / 0.8 / 1.2. Also print the raw logits shape for one step.\""], "pdfs": ["pdfs/ch05/01_main-chapter-code/ch05.pdf", "pdfs/ch05/11_qwen3/standalone-qwen3-plus-kvcache.pdf"], "done": "temp policy for tool-calls vs creative Gods."}, {"num": "04", "title": "Mission 04 — Tokens & Context: AI Counts Cost, You Find Your Own Leak", "html": "<h1>🛡️ Mission 04 — Tokens &amp; Context: AI Counts Cost, You Find Your Own Leak</h1>\n<p><strong>🎯 Your job:</strong> Models read <em>tokens,</em> not text. AI computes the cost math; **you hunt for</p>\n<p>where your own repos stuff context** and would silently truncate. The director's job is</p>\n<p>spotting the leak, then briefing AI to fix it (Mission 05/06).</p>\n<p><strong>🧠 Why:</strong> Pantheon's \"shared brain\" and HADA's evidence archives are big. Context ≠ memory</p>\n<p>— it's a fixed buffer that drops the oldest tokens. This is the silent killer of agent loops.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch02/01_main-chapter-code/ch02.pdf</code> + <code>pdfs/ch02/05_bpe-from-scratch/bpe-from-scratch.pdf</code>.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, write tokens.py: use tiktoken. (1) tokenize a paragraph with gpt2-BPE</blockquote>\n<blockquote>vs cl100k_base, print counts. (2) Take 100 lines of a real Go file and report token</blockquote>\n<blockquote>count + estimated $ cost at $0.50/1M tokens. (3) Send a prompt longer than the model</blockquote>\n<blockquote>max context and catch the truncation/error.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>Run it.</strong> Note Go code tokens vs prose, the $ cost of one full-file read, and the</span></label></li>\n</ul>\n<p>      truncation behavior.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>👀 What to watch for:</strong> code tokenizes ~3–4× denser than prose; long context = slow</span></label></li>\n</ul>\n<p>      AND pricey (quadratic attention from Mission 01). That's why chunking exists.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>Extend preview:</strong> <code>pdfs/ch05/09_extending-tokenizers/extend-tiktoken.pdf</code> (adding</span></label></li>\n</ul>\n<p>      domain vocab — relevant if HPS ever needs it).</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, list **2 specific places in HADA/Pantheon where you</p>\n<p>context-stuff today** (point at real files/behaviors you directed). For each, write one</p>\n<p>sentence: <em>\"Replace with retrieval (Mission 06) because ___.\"</em> You found the leak; next</p>\n<p>missions fix it under your direction.</p>\n<p><strong>🏆 Done when:</strong> AI's token script runs (counts + cost + truncation shown), and <code>loot.md</code></p>\n<p>names 2 real context-stuffing spots in your repos with a retrieval-based fix rationale.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, write tokens.py: use tiktoken. (1) tokenize a paragraph with gpt2-BPE\nvs cl100k_base, print counts. (2) Take 100 lines of a real Go file and report token\ncount + estimated $ cost at $0.50/1M tokens. (3) Send a prompt longer than the model\nmax context and catch the truncation/error.\""], "pdfs": ["pdfs/ch02/01_main-chapter-code/ch02.pdf", "pdfs/ch02/05_bpe-from-scratch/bpe-from-scratch.pdf", "pdfs/ch05/09_extending-tokenizers/extend-tiktoken.pdf"], "done": "names 2 real context-stuffing spots in your repos with a retrieval-based fix rationale."}, {"num": "05", "title": "Mission 05 — Vectors & Memory: You *Direct* AI to Add Retrieval", "html": "<h1>🛡️ Mission 05 — Vectors &amp; Memory: You <em>Direct</em> AI to Add Retrieval</h1>\n<p><strong>🎯 Your job (tier up: Direct the change):</strong> No more just observing. You tell AI *what to</p>\n<p>build and why*; AI writes it; you verify. Real \"memory\" for agents = embeddings + nearest</p>\n<p>search. This is how Pantheon's brain <em>should</em> work and how HADA could recall evidence</p>\n<p>without bloating context (your Mission 04 leak).</p>\n<p><strong>🧠 Why:</strong> You've been directing AI to build things your whole stack is made of. This</p>\n<p>mission practices directing AI on the <em>retrieval primitive</em> — and verifying it actually works.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch02/03_bonus_embedding-vs-matmul/embeddings-and-linear-layers.pdf</code></span></label></li>\n</ul>\n<p>      (embeddings = learned lookup tables).</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span>**🤖 Prompt to give your AI coder (you brief it — note the <em>why</em>):**</span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, write memory.py using sentence-transformers (all-MiniLM-L6-v2). (1)</blockquote>\n<blockquote>Embed 5 sentences: 2 similar pairs + 1 outlier. Print cosine sim — similar should be</blockquote>\n<blockquote>~0.7+, outlier ~0.2. (2) Build a from-scratch vector search over 10 docs (no libs):</blockquote>\n<blockquote>rank by cosine to a query, return top-3. (3) Rebuild the same with chromadb and assert</blockquote>\n<blockquote>top-3 matches. (4) Show that embedding the same text with TWO different models gives a</blockquote>\n<blockquote>meaningless similarity.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>Run it.</strong> Confirm similar≈high, outlier≈low, library matches scratch, cross-model sim is junk.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>👀 What to watch for:</strong> same-model embedding is non-negotiable; chromadb should match</span></label></li>\n</ul>\n<p>      your scratch top-3 exactly (if not, AI has a bug — your call to send back).</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, write the **4-step design to turn HADA's <code>evidence/</code> into</p>\n<p>retrievable memory**: chunk → embed → index → retrieve-on-demand. For each step, write one</p>\n<p>line on <em>what you'd tell AI to do.</em> You're architecting the brief, not coding it.</p>\n<p><strong>🏆 Done when:</strong> AI's memory script runs and matches library↔scratch, and <code>loot.md</code> has</p>\n<p>your 4-step HADA-memory brief.</p>", "nTasks": 4, "prompts": ["\"In ~/ai-eng, write memory.py using sentence-transformers (all-MiniLM-L6-v2). (1)\nEmbed 5 sentences: 2 similar pairs + 1 outlier. Print cosine sim — similar should be\n~0.7+, outlier ~0.2. (2) Build a from-scratch vector search over 10 docs (no libs):\nrank by cosine to a query, return top-3. (3) Rebuild the same with chromadb and assert\ntop-3 matches. (4) Show that embedding the same text with TWO different models gives a\nmeaningless similarity.\""], "pdfs": ["pdfs/ch02/03_bonus_embedding-vs-matmul/embeddings-and-linear-layers.pdf"], "done": "your 4-step HADA-memory brief."}, {"num": "06", "title": "Mission 06 — RAG From Scratch: You Brief AI, You Pick the Breaking Chunks", "html": "<h1>🛡️ Mission 06 — RAG From Scratch: You Brief AI, You Pick the Breaking Chunks</h1>\n<p><strong>🎯 Your job:</strong> RAG = give the model <em>only relevant chunks</em> instead of the whole archive.</p>\n<p>Direct AI to build the pipeline; <strong>you choose the query that breaks it</strong> — that's how you</p>\n<p>learn what retrieval can and can't do.</p>\n<p><strong>🧠 Why:</strong> Fixes the Mission 04 leak for real. HADA evidence + Pantheon brain are retrieval</p>\n<p>problems. You'll direct the build, then stress-test it yourself.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Reuse loot:</strong> AI's <code>memory.py</code> from Mission 05 is your retrieval engine.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, write rag.py: chunk a folder of markdown (e.g. ~/hermes-stack-workbooks)</blockquote>\n<blockquote>into ~200-token pieces, embed+index via memory.py, retrieve top-3 for a question, and</blockquote>\n<blockquote>prompt gpt2-small (or a chat model) with ONLY those chunks to answer. Print the answer</blockquote>\n<blockquote>+ which chunks were used.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>Run it</strong> on a question whose answer lives deep in the docs.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>👀 What to watch for:</strong> token cost vs full-context; does it actually use the right chunk?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>Your stress test:</strong> pick a question whose answer is <em>split across two chunks</em> or</span></label></li>\n</ul>\n<p>      <em>buried under a near-miss chunk</em>. Watch it fail or hallucinate confidently.</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, record (a) the token savings vs dumping the whole doc, and</p>\n<p>(b) the exact query you chose that broke retrieval + <em>why</em> it broke (e.g. \"answer spanned</p>\n<p>chunk boundary,\" \"a distractor chunk scored higher\"). You diagnosed a real RAG failure mode.</p>\n<p><strong>🏆 Done when:</strong> AI's RAG runs, you measured savings, and <code>loot.md</code> documents a real</p>\n<p>retrieval failure you deliberately triggered + its cause.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, write rag.py: chunk a folder of markdown (e.g. ~/hermes-stack-workbooks)\ninto ~200-token pieces, embed+index via memory.py, retrieve top-3 for a question, and\nprompt gpt2-small (or a chat model) with ONLY those chunks to answer. Print the answer\n+ which chunks were used.\""], "pdfs": [], "done": "retrieval failure you deliberately triggered + its cause."}, {"num": "07", "title": "Mission 07 — Tool Use: You Design the Contract, AI Wires the Loop", "html": "<h1>🛡️ Mission 07 — Tool Use: You Design the Contract, AI Wires the Loop</h1>\n<p><strong>🎯 Your job:</strong> Function calling is how agents <em>act</em> — the backbone of every HADA/Agent</p>\n<p>Forge tool step. You design the <strong>tool contract</strong> (what the tool is, what args it takes);</p>\n<p>AI wires the execute→feed-back loop.</p>\n<p><strong>🧠 Why:</strong> Your agents already call tools. Designing the contract yourself means you can</p>\n<p>spec it precisely and validate it — the discipline HPS wants at a provisioning boundary.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Read (free):</strong> https://platform.openai.com/docs/guides/function-calling (protocol is</span></label></li>\n</ul>\n<p>      provider-agnostic).</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>Design the contract yourself</strong> (no AI yet): pick ONE tool your stack needs — e.g.</span></label></li>\n</ul>\n<p>      <code>verify_artifact(path)</code> for HADA, or <code>host_status(ip)</code> for HPS. Write its name + args +</p>\n<p>      what it returns.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, implement the tool contract I designed: &lt;paste your contract&gt;. Build a</blockquote>\n<blockquote>loop: model emits JSON {tool, args} → parse + validate (reject unknown tool / missing</blockquote>\n<blockquote>args) → execute → append result → ask model to answer. Use a real chat model via my</blockquote>\n<blockquote>provider or mock the JSON if no model access.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>Run it.</strong> Does validation reject a bad call? Does the loop recover?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>👀 What to watch for:</strong> validation MUST happen before execution (security); malformed</span></label></li>\n</ul>\n<p>      JSON is the common failure — your brief should require a retry path.</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, write the <strong>contract you designed</strong> + one sentence on how</p>\n<p>this loop maps onto HADA's tool-execution (tool → execute → verify → continue). You designed</p>\n<p>the spec; AI implemented it. That's directing.</p>\n<p><strong>🏆 Done when:</strong> AI's tool loop runs with validation, and <code>loot.md</code> has your tool contract +</p>\n<p>the HADA mapping.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, implement the tool contract I designed: <paste your contract>. Build a\nloop: model emits JSON {tool, args} → parse + validate (reject unknown tool / missing\nargs) → execute → append result → ask model to answer. Use a real chat model via my\nprovider or mock the JSON if no model access.\""], "pdfs": [], "done": "the HADA mapping."}, {"num": "08", "title": "Mission 08 — Orchestration Patterns: You Map HADA/Pantheon", "html": "<h1>🛡️ Mission 08 — Orchestration Patterns: You Map HADA/Pantheon</h1>\n<p><strong>🎯 Your job:</strong> Step back to <em>patterns.</em> You've directed AI to build multi-agent systems;</p>\n<p>now <strong>name what you built</strong> and find where it leaks. Deliberate design beats instinct at scale.</p>\n<p><strong>🧠 Why:</strong> Anthropic's patterns will feel familiar — that's the point. You'll see your own</p>\n<p>decisions reflected and spot the gaps to brief AI on next time.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Read (free):</strong> https://www.anthropic.com/engineering/building-effective-agents —</span></label></li>\n</ul>\n<p>      prompt chaining, routing, parallelization, orchestrator-worker, evaluator-optimizer.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>Map YOUR repos (you know them best):</strong></span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span>HADA → which pattern? (likely orchestrator + evaluator-optimizer w/ evidence gate)</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span>Pantheon → which pattern? (likely routing across specialist \"Gods\")</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span>Agent Forge → delegation = orchestrator-worker?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"5\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, build a minimal orchestrator-worker: one manager prompt splits a task</blockquote>\n<blockquote>into 2 subtasks, 2 worker calls, 1 merge call. Print each step. No framework.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"6\"><span><strong>Run it.</strong> See the manager→worker→merge flow your own systems do at scale.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"7\"><span><strong>Free ref:</strong> https://github.com/microsoft/ai-agents-for-beginners (10 hands-on lessons).</span></label></li>\n</ul>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, write <strong>one real failure mode</strong> of your orchestration that</p>\n<p>this mission's patterns would now let you fix (e.g. no evaluator step, unbounded worker</p>\n<p>retries, context overflow manager↔worker). This is the brief you'd give AI next time.</p>\n<p><strong>🏆 Done when:</strong> AI's mini-orchestrator runs, and <code>loot.md</code> maps HADA/Pantheon/Agent Forge</p>\n<p>to named patterns + ≥1 concrete fix you'd direct.</p>", "nTasks": 8, "prompts": ["\"In ~/ai-eng, build a minimal orchestrator-worker: one manager prompt splits a task\ninto 2 subtasks, 2 worker calls, 1 merge call. Print each step. No framework.\""], "pdfs": [], "done": "to named patterns + ≥1 concrete fix you'd direct."}, {"num": "09", "title": "Mission 09 — Frameworks: You Choose One, AI Builds, You Decide Lean-vs-Framework", "html": "<h1>🛡️ Mission 09 — Frameworks: You Choose One, AI Builds, You Decide Lean-vs-Framework</h1>\n<p><strong>🎯 Your job:</strong> You built agents by directing AI (07/08). Now use a framework to see what it</p>\n<p>abstracts. <strong>You pick which one</strong>; AI builds; <strong>you decide</strong> when to use it vs roll lean (HPS</p>\n<p>spirit).</p>\n<p><strong>🧠 Why:</strong> HPS/HADA are framework-free by design. Knowing what smolagents/langchain/llamaindex</p>\n<p>hide lets you choose deliberately — prototype with framework, ship lean.</p>\n<h2>🛠️ Activity — you choose one (or all three, they're small):</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>smolagents:</strong> https://github.com/huggingface/smolagents — <code>pip install smolagents</code>,</span></label></li>\n</ul>\n<p>      build a CodeAgent with one tool. Compare to your Mission 07 loop.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>LangChain:</strong> https://python.langchain.com/docs/tutorials — tool-calling chain; note</span></label></li>\n</ul>\n<p>      what it handles (retries, parsing, memory).</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>LlamaIndex:</strong> https://docs.llamaindex.ai — RAG agent over <code>~/hermes-stack-workbooks</code>;</span></label></li>\n</ul>\n<p>      compare to your Mission 06 from-scratch RAG.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>🤖 Prompt to give your AI coder:</strong> \"Build a working agent with &lt;chosen framework&gt;</span></label></li>\n</ul>\n<p>      that does &lt;one task from your stack&gt;. Keep it runnable in ~/ai-eng.\"</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, write <strong>what the framework hid that you built by hand in 06/07</strong></p>\n<p>(retries? parsing? memory?) and <strong>your rule of thumb</strong>: when would YOU tell AI to use a</p>\n<p>framework vs roll lean for an HPS production deploy? You made the architectural call.</p>\n<p><strong>🏆 Done when:</strong> A framework agent runs, and <code>loot.md</code> contrasts framework-vs-lean with your</p>\n<p>own deploy rule of thumb.</p>", "nTasks": 4, "prompts": [], "pdfs": [], "done": "own deploy rule of thumb."}, {"num": "10", "title": "Mission 10 — Evaluations: You Write the Pass/Fail, AI Runs the Suite", "html": "<h1>🛡️ Mission 10 — Evaluations: You Write the Pass/Fail, AI Runs the Suite</h1>\n<p><strong>🎯 Your job (top tier: Architect):</strong> The most underrated AI-engineering skill. You write</p>\n<p>the <strong>evaluation spec</strong> (questions + pass/fail); AI builds + runs the suite. Evals turn</p>\n<p>\"vibes\" into signal — and HADA's evidence gate is really an eval you already believe in.</p>\n<p><strong>🧠 Why:</strong> You've been patching agents by feel. Writing the eval yourself means you can tell</p>\n<p>AI <em>how to prove</em> an agent works, then trust the result.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch07/03_model-evaluation/llm-instruction-eval-ollama.pdf</code> (and</span></label></li>\n</ul>\n<p>      the <code>-openai.pdf</code> variant). See how the book evaluates instruction-following.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>You write the eval spec (no AI yet):</strong> take your Mission 06 RAG bot. Write 5 questions</span></label></li>\n</ul>\n<p>      with known answers from your docs. Define: correct / partial / wrong. Set a pass bar (≥80%).</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng, write eval.py that runs my 5 questions against rag.py, scores each</blockquote>\n<blockquote>correct/partial/wrong, computes accuracy %, and also runs an LLM-as-judge grade.</blockquote>\n<blockquote>Print both my manual key vs judge, and flag disagreements.\"</blockquote>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>Run it.</strong> Does it pass your bar? Do you + the judge agree?</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>Correlation:</strong> skim <code>pdfs/ch07/03_model-evaluation/scores/correlation-analysis.pdf</code></span></label></li>\n</ul>\n<p>      (why we check if automated judges track humans).</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, <strong>design one eval for a real HADA/HPS step</strong> — e.g. \"does the</p>\n<p>release gate reject a tampered artifact?\" Write the pass/fail criterion <em>you</em> would accept.</p>\n<p>You specified the proof; that's the engineer's job.</p>\n<p><strong>🏆 Done when:</strong> AI's eval suite runs on your RAG bot, and <code>loot.md</code> has a real HADA/HPS eval</p>\n<p>spec with a pass criterion you wrote.</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng, write eval.py that runs my 5 questions against rag.py, scores each\ncorrect/partial/wrong, computes accuracy %, and also runs an LLM-as-judge grade.\nPrint both my manual key vs judge, and flag disagreements.\""], "pdfs": ["pdfs/ch07/03_model-evaluation/llm-instruction-eval-ollama.pdf", "pdfs/ch07/03_model-evaluation/scores/correlation-analysis.pdf"], "done": "spec with a pass criterion you wrote."}, {"num": "11", "title": "Mission 11 — Fine-Tune & Align: You Spec Model+Data, AI Trains", "html": "<h1>🛡️ Mission 11 — Fine-Tune &amp; Align: You Spec Model+Data, AI Trains</h1>\n<p><strong>🎯 Your job:</strong> Make a model <em>yours.</em> You specify the <strong>base model + training data + eval</strong>;</p>\n<p>AI does the LoRA/DPO training. Tie the base-model pick back to what llmfit would allow.</p>\n<p><strong>🧠 Why:</strong> llmfit matches hardware to models, but what if you need a model fluent in your</p>\n<p>domain (HPS provisioning, HADA release policy)? You architect the fine-tune; AI executes.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>Open the codex:</strong> <code>pdfs/ch06/01_main-chapter-code/ch06.pdf</code> (classification finetune)</span></label></li>\n</ul>\n<p>      + <code>pdfs/ch07/01_main-chapter-code/ch07.pdf</code> (instruction finetune). For DPO:</p>\n<p>      <code>pdfs/ch07/04_preference-tuning-with-dpo/dpo-from-scratch.pdf</code>.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>You write the spec (no AI yet):</strong> pick a base model <em>llmfit would allow on your HW</em>,</span></label></li>\n</ul>\n<p>      a tiny instruction set (e.g. \"given a release log, decide pass/fail\"), and the Mission-10</p>\n<p>      eval that proves it worked.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>🤖 Prompt to give your AI coder:</strong></span></label></li>\n</ul>\n<blockquote>\"In ~/ai-eng (pip install peft), load &lt;base model&gt;, attach LoRA to attention, train on</blockquote>\n<blockquote>&lt;my tiny set&gt;, print trainable-param % (should be &lt;&lt;100%), and run my eval.py. If no</blockquote>\n<p>      GPU, simulate the training loop and report the expected param savings.\"</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>Run it.</strong> Confirm LoRA trains far fewer params than full finetune.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>👀 What to watch for:</strong> DPO needs (chosen, rejected) pairs, not a reward model —</span></label></li>\n</ul>\n<p>      see <code>create-preference-data-ollama.pdf</code>. Match the method to your data.</p>\n<p><strong>✍️ Your move:</strong> In <code>loot.md</code>, write the <strong>fine-tune spec for one of your repos</strong>: base model</p>\n<p>(tied to llmfit), data source (e.g. HADA release decisions), eval (your Mission 10 gate). You</p>\n<p>authored the brief; AI trains.</p>\n<p><strong>🏆 Done when:</strong> AI's LoRA trains (or simulates with reported savings), and <code>loot.md</code> has your</p>\n<p>repo-specific fine-tune spec (model + data + eval).</p>", "nTasks": 5, "prompts": ["\"In ~/ai-eng (pip install peft), load <base model>, attach LoRA to attention, train on\n<my tiny set>, print trainable-param % (should be <<100%), and run my eval.py. If no"], "pdfs": ["pdfs/ch06/01_main-chapter-code/ch06.pdf", "pdfs/ch07/01_main-chapter-code/ch07.pdf", "pdfs/ch07/04_preference-tuning-with-dpo/dpo-from-scratch.pdf"], "done": "repo-specific fine-tune spec (model + data + eval)."}, {"num": "12", "title": "Mission 12 — Boss Fight: You Architect, AI Builds, You Ship + Eval + Serve", "html": "<h1>🛡️ Mission 12 — Boss Fight: You Architect, AI Builds, You Ship + Eval + Serve</h1>\n<p><strong>🎯 Your job (capstone):</strong> Everything comes together. You <strong>architect</strong> a small but real AI</p>\n<p>service; AI builds it; <strong>you</strong> run the eval gate and make the ship/no-ship call — the HPS/HADA</p>\n<p>role, done deliberately.</p>\n<p><strong>🧠 Why:</strong> This connects <code>linux-learning-workbooks</code> (deploy) + <code>hermes-stack-workbooks</code></p>\n<p>(production) to the AI engineering you just learned. You close the loop: architect → build →</p>\n<p>prove → serve.</p>\n<h2>🛠️ Activity</h2>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"0\"><span><strong>You architect (pick one):</strong></span></label></li>\n<li>(a) RAG Q&amp;A over <code>~/hermes-stack-workbooks/</code> + <code>~/linux-learning-workbooks/</code></li>\n<li>(b) A \"release-evidence checker\" agent inspired by HADA's gate</li>\n<li>(c) An <code>llmfit</code>-style \"which model fits my box\" advisor with a tool call</li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"1\"><span><strong>🤖 Prompt to give your AI coder:</strong> \"Build &lt;my pick&gt; in ~/ai-eng, reusing rag.py /</span></label></li>\n</ul>\n<p>      memory.py / tool loop from earlier missions. Keep it framework-lean (HPS spirit).\"</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"2\"><span><strong>You run the Mission 10 eval</strong> — must pass ≥80% before serving. You decide ship/no-ship.</span></label></li>\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"3\"><span><strong>Serve:</strong> wrap in FastAPI or a systemd service on OVH2 (linux-workbooks cover this).</span></label></li>\n</ul>\n<p>      Add auth / network allowlist — a live box is not a sandbox.</p>\n<ul class=\"tasks\">\n<li class=\"task\"><label><input type=\"checkbox\" data-task=\"4\"><span><strong>Observe:</strong> log token usage + latency per call; tie back to Mission 04 cost math.</span></label></li>\n</ul>\n<p><strong>✍️ Your move:</strong> Write <strong><code>BOSS-FIGHT.md</code></strong>: architecture you designed, eval score (your gate),</p>\n<p>how to run, what you'd add next. This is your gauntlet-completion certificate — authored by you.</p>\n<p><strong>🏆 Done when:</strong> A working service runs on OVH2, passes your eval ≥80%, is network-hardened,</p>\n<p>and <code>BOSS-FIGHT.md</code> documents it. You went from directing scripts to architecting systems.</p>\n<p>🎉 <strong>Gauntlet complete, Engineer.</strong> You now direct AI on AI-engineering — not by copy-paste,</p>\n<p>but by understanding what you're asking for.</p>", "nTasks": 5, "prompts": [], "pdfs": [], "done": "and `BOSS-FIGHT.md` documents it. You went from directing scripts to architecting systems."}];
 const KEY = "gauntlet.progress.v1";
+const AIKEY = "gauntlet.ai.v1";
+const ADDEDKEY = "gauntlet.added.v1";
 let progress = {};
+let ai = {};
+let CUR = null;
 try { progress = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e){ progress = {}; }
+try { ai = JSON.parse(localStorage.getItem(AIKEY) || "{}"); } catch(e){ ai = {}; }
 
 function save(){ localStorage.setItem(KEY, JSON.stringify(progress)); }
-function doneCount(m){ const p = progress[m.num]||[]; return p.length; }
+function saveAI(){ localStorage.setItem(AIKEY, JSON.stringify(ai)); }
+function mergeAdded(){
+  try {
+    const added = JSON.parse(localStorage.getItem(ADDEDKEY) || "[]");
+    added.forEach(m => MISSIONS.push(m));
+  } catch(e){}
+}
+function doneCount(m){ return (progress[m.num]||[]).length; }
 function pct(m){ return m.nTasks? Math.round(doneCount(m)/m.nTasks*100):0; }
 
 function renderHome(){
@@ -116,33 +170,34 @@ function renderHome(){
 function openMission(num){
   const m = MISSIONS.find(x=>x.num===num);
   if(!m) return;
+  CUR = m;
   document.getElementById("home").classList.add("hidden");
   const el = document.getElementById("mission");
   el.classList.remove("hidden");
   let html = `<div class="back" onclick="renderHome()">← All missions</div>`;
   html += `<h1>${m.title}</h1>`;
   html += m.html;
-  // AI prompts panel
   if(m.prompts.length){
-    html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""} — copy to your coder</h4>`;
+    html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>`;
     m.prompts.forEach((p,idx)=>{
       html += `<div class="prompt" id="prompt${idx}">${escapeHtml(p)}</div>`;
-      html += `<button onclick="copyPrompt(${idx})" style="margin:6px 0 12px">Copy prompt ${idx+1}</button>`;
+      html += `<div style="margin:6px 0 12px">
+        <button onclick="copyPrompt(${idx})">Copy prompt ${idx+1}</button>
+        <button class="primary" onclick="runWithAI(${idx})">▶ Run with AI</button>
+        <span class="status" id="aiStatus${idx}"></span></div>`;
+      html += `<div class="ai-result hidden" id="aiResult${idx}"></div>`;
     });
     html += `</div>`;
   }
-  // PDFs
   if(m.pdfs.length){
     html += `<div class="panel"><h4>📚 Codex PDFs</h4>`;
     m.pdfs.forEach(p=>{ html += `<a class="pdflink" href="${p}" target="_blank" rel="noopener">📄 ${p}</a>`; });
     html += `</div>`;
   }
-  // Done when
   if(m.done){ html += `<div class="done-box"><b>🏆 Done when:</b> ${escapeHtml(m.done)}</div>`; }
   html += `<div class="toolbar"><button class="primary" onclick="nextMission('${m.num}')">Next mission →</button>
            <button onclick="renderHome()">← Home</button></div>`;
   el.innerHTML = html;
-  // wire checkboxes
   el.querySelectorAll('input[data-task]').forEach(inp=>{
     const tid = inp.getAttribute('data-task');
     const checked = (progress[m.num]||[]).includes(tid);
@@ -168,30 +223,202 @@ function copyPrompt(idx){
   }).catch(()=>{ alert(txt); });
 }
 
+/* ---------------- AI Coder ---------------- */
+function aiConfigured(){
+  if(!ai.baseUrl) return false;
+  if(ai.provider==='opencode' || ai.provider==='local') return true; // local may need no key
+  return !!ai.apiKey;
+}
+async function runAI(system, user, onText, onError){
+  if(!aiConfigured()){
+    onError("Open ⚙ AI Coder and set a provider/endpoint first.");
+    return;
+  }
+  const status = document.createElement("span");
+  try {
+    let body, headers={}, url;
+    if(ai.provider==='anthropic'){
+      url = ai.baseUrl.replace(/\/$/,'') + "/messages";
+      body = JSON.stringify({model:ai.model||"claude-3-5-sonnet-20241022", max_tokens:2000, system, messages:[{role:"user",content:user}]});
+      headers = {"content-type":"application/json","x-api-key":ai.apiKey,
+                 "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"};
+    } else {
+      url = ai.baseUrl.replace(/\/$/,'') + "/chat/completions";
+      body = JSON.stringify({model:ai.model||"gpt-4o", messages:[{role:"system",content:system},{role:"user",content:user}], max_tokens:2000});
+      headers = {"content-type":"application/json"};
+      if(ai.apiKey) headers["authorization"] = "Bearer " + ai.apiKey;
+    }
+    const res = await fetch(url, {method:"POST", headers, body});
+    if(!res.ok){ const t = await res.text(); onError("API error "+res.status+": "+t.slice(0,200)); return; }
+    const j = await res.json();
+    let text = (ai.provider==='anthropic')
+      ? (j.content||[]).map(c=>c.text||"").join("")
+      : (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content) || "";
+    onText(text);
+  } catch(e){
+    onError("Request failed: "+e.message+". Check the endpoint/key, and that CORS is allowed (OpenRouter/local OK).");
+  }
+}
+function renderAIText(container, text){
+  // split into code blocks + prose
+  const parts = text.split(/```/);
+  let html = "";
+  parts.forEach((part,i)=>{
+    if(i%2===1){
+      const nl = part.indexOf("\n");
+      const code = nl>=0? part.slice(nl+1): part;
+      const id = "cb"+Math.random().toString(36).slice(2);
+      html += `<div class="codeblk" id="${id}">${escapeHtml(code)}</div>
+        <button onclick="copyText('${id}')" style="margin-bottom:8px">Copy code</button>`;
+    } else if(part.trim()){
+      html += `<div style="color:#cdd6e0">${escapeHtml(part.trim())}</div>`;
+    }
+  });
+  container.innerHTML = html;
+}
+function copyText(id){
+  const t = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(t).then(()=>{}).catch(()=>alert(t));
+}
+const AI_SYS = "You are the user's AI coding partner for 'The Agent Engineer's Gauntlet', an AI-engineering workbook. The user directs you; they are learning by understanding what you produce. Write minimal, runnable code (Python/PyTorch/etc as asked) with brief comments. Prefer a small working script over exposition. If a task needs a model, use a tiny one (e.g. gpt2) and note it.";
+function runWithAI(idx){
+  const el = document.getElementById("aiResult"+idx);
+  const st = document.getElementById("aiStatus"+idx);
+  el.classList.remove("hidden");
+  st.textContent = "generating…";
+  el.innerHTML = "<i style='color:var(--dim)'>thinking…</i>";
+  const prompt = CUR.prompts[idx];
+  runAI(AI_SYS, prompt,
+    (text)=>{ renderAIText(el, text); st.textContent=""; },
+    (err)=>{ el.innerHTML = "<span style='color:var(--red)'>"+escapeHtml(err)+"</span>"; st.textContent=""; }
+  );
+}
+
+/* ---------------- Expand gauntlet ---------------- */
+const EXPAND_SYS = "You extend 'The Agent Engineer's Gauntlet', an AI-engineering workbook for a builder who directs AI to write code. Produce ONE new mission in the same voice and format. Return ONLY minified JSON: {\"title\":\"Mission NN — <name>\",\"md\":\"<full markdown with ## 🛠️ Activity, checkboxes - [ ], 🤖 Prompt to give your AI coder: as a > quoted line, 👀 What to watch for, ✍️ Your move, and 🏆 Done when>\",\"prompts\":[\"<the quoted prompt text>\"],\"done\":\"<done text>\"}. Keep it concrete and runnable.";
+function nextNum(){
+  let max=12;
+  MISSIONS.forEach(m=>{ const n=parseInt(m.num,10); if(n>max) max=n; });
+  return String(max+1).padStart(2,"0");
+}
+async function expandGauntlet(){
+  const st = document.getElementById("overall");
+  st.textContent = "AI is drafting a new mission…";
+  runAI(EXPAND_SYS, "Add a new mission that builds on the previous ones (e.g. agent security, observability, or multimodal). Make it genuinely useful.",
+    (text)=>{
+      try {
+        const m = text.match(/\{[\s\S]*\}/);
+        const obj = JSON.parse(m[0]);
+        const num = nextNum();
+        const newMission = {
+          num, title: obj.title || ("Mission "+num),
+          html: jsMdToHtml(obj.md||""),
+          nTasks: (obj.md.match(/-\s*\[ \]/g)||[]).length,
+          prompts: obj.prompts||[],
+          pdfs: [], done: obj.done||""
+        };
+        MISSIONS.push(newMission);
+        const added = JSON.parse(localStorage.getItem(ADDEDKEY)||"[]");
+        added.push(newMission); localStorage.setItem(ADDEDKEY, JSON.stringify(added));
+        st.textContent = "";
+        renderHome();
+        alert("✨ Added: "+newMission.title+"\n\nThe gauntlet just expanded. Open it from the home grid.");
+      } catch(e){
+        st.textContent = "";
+        alert("Couldn't parse the AI's mission. Raw response:\n\n"+text.slice(0,800));
+      }
+    },
+    (err)=>{ st.textContent=""; alert(err); }
+  );
+}
+
+/* minimal JS markdown->html (for AI-generated missions) */
+function jsMdToHtml(md){
+  const lines = md.split("\n"); let out=[], inUl=false, inCode=false, cb=[];
+  const inline=s=>{ s=escapeHtml(s);
+    s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
+    s=s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+    s=s.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g,"<em>$1</em>");
+    return s; };
+  lines.forEach(line=>{
+    if(line.trim().startsWith("```")){
+      if(inUl){out.push("</ul>");inUl=false;}
+      if(inCode){out.push("<pre><code>"+escapeHtml(cb.join("\n"))+"</code></pre>");cb=[];inCode=false;}
+      else inCode=true; return;
+    }
+    if(inCode){cb.push(line);return;}
+    let hm=line.match(/^(#{1,4})\s+(.*)$/);
+    if(hm){ if(inUl){out.push("</ul>");inUl=false;} out.push("<h"+hm[1].length+">"+inline(hm[2])+"</h"+hm[1].length+">"); return; }
+    if(line.lstrip===undefined) {}
+    if(line.trim().startsWith(">")){ if(inUl){out.push("</ul>");inUl=false;} out.push("<blockquote>"+inline(line.trim().slice(1).trim())+"</blockquote>"); return; }
+    let tm=line.match(/^(\s*)-\s*\[([ xX])\]\s*(.*)$/);
+    if(tm){ if(!inUl){out.push('<ul class="tasks">');inUl=true;}
+      out.push('<li class="task"><label><input type="checkbox" data-task="'+out.filter(x=>x.includes("data-task=")).length+'"><span>'+inline(tm[3])+'</span></label></li>'); return; }
+    if(!line.trim()){ if(inUl){out.push("</ul>");inUl=false;} return; }
+    if(inUl){out.push("</ul>");inUl=false;}
+    out.push("<p>"+inline(line)+"</p>");
+  });
+  if(inUl)out.push("</ul>");
+  if(inCode&&cb.length)out.push("<pre><code>"+escapeHtml(cb.join("\n"))+"</code></pre>");
+  return out.join("\n");
+}
+
 function nextMission(num){
   const i = MISSIONS.findIndex(x=>x.num===num);
   if(i<0) return renderHome();
   const nx = MISSIONS[i+1];
   if(nx) openMission(nx.num); else { alert("🎉 Gauntlet complete, Engineer."); renderHome(); }
 }
-
 function resetProgress(){
-  if(confirm("Reset all progress? (keeps the workbook)")){
-    progress = {}; save(); renderHome();
-  }
+  if(confirm("Reset all progress? (keeps the workbook)")){ progress={}; save(); renderHome(); }
 }
-
-function playTour(){
-  // open first incomplete, or 00
-  let m = MISSIONS.find(x=>doneCount(x)<x.nTasks) || MISSIONS[0];
-  openMission(m.num);
-  window.scrollTo(0,0);
+function openAIModal(){
+  document.getElementById("aiProvider").value = ai.provider||"opencode";
+  document.getElementById("aiBase").value = ai.baseUrl||"";
+  document.getElementById("aiKey").value = ai.apiKey||"";
+  document.getElementById("aiModel").value = ai.model||"";
+  document.getElementById("aiModal").classList.remove("hidden");
+}
+function applyPreset(){
+  const p=document.getElementById("aiProvider").value;
+  const presets={
+    opencode:{base:"http://localhost:4099/v1",model:""},
+    openrouter:{base:"https://openrouter.ai/api/v1",model:"anthropic/claude-3.5-sonnet"},
+    anthropic:{base:"https://api.anthropic.com/v1",model:"claude-3-5-sonnet-20241022"},
+    openai:{base:"https://api.openai.com/v1",model:"gpt-4o"},
+    local:{base:"http://localhost:1234/v1",model:"local-model"}
+  };
+  const pr=presets[p];
+  document.getElementById("aiBase").value=pr.base;
+  document.getElementById("aiModel").value=pr.model;
+}
+function saveAISettings(){
+  ai = {
+    provider: document.getElementById("aiProvider").value,
+    baseUrl: document.getElementById("aiBase").value.trim(),
+    apiKey: document.getElementById("aiKey").value.trim(),
+    model: document.getElementById("aiModel").value.trim()
+  };
+  saveAI();
+  document.getElementById("aiModal").classList.add("hidden");
+  const ok = aiConfigured();
+  document.getElementById("overall").textContent = ok ? "AI coder ready ✓" : "AI not configured";
 }
 
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 
 document.getElementById("resetBtn").onclick = resetProgress;
 document.getElementById("playBtn").onclick = playTour;
+document.getElementById("expandBtn").onclick = expandGauntlet;
+document.getElementById("aiGear").onclick = openAIModal;
+document.getElementById("aiCancel").onclick = ()=>document.getElementById("aiModal").classList.add("hidden");
+document.getElementById("aiSave").onclick = saveAISettings;
+document.getElementById("aiProvider").onchange = applyPreset;
+function playTour(){
+  let m = MISSIONS.find(x=>doneCount(x)<x.nTasks) || MISSIONS[0];
+  openMission(m.num); window.scrollTo(0,0);
+}
+mergeAdded();
 renderHome();
 </script>
 </body>
