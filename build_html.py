@@ -223,6 +223,7 @@ TEMPLATE = r"""<!DOCTYPE html>
     background:radial-gradient(circle at 50% 40%, #1a1140 0%, #0a0d14 70%);color:#fff;overflow:hidden;animation:gaunt-fade .5s ease}
   .divider .emblem{width:min(46vw,260px);height:min(46vw,260px);animation:gaunt-rise .7s ease, gaunt-float 5s ease-in-out 1s infinite}
   .divider .hero-img{width:min(46vw,300px);height:auto;border-radius:16px;box-shadow:0 0 40px rgba(140,110,255,.4);animation:gaunt-rise .7s ease, gaunt-float 5s ease-in-out 1s infinite}
+  .divider .track-video{max-width:90vw;max-height:80vh;border-radius:14px;box-shadow:0 0 50px rgba(140,110,255,.45)}
   .divider .mtitle{margin-top:18px;font-size:22px;letter-spacing:.5px;animation:gaunt-rise .8s ease;text-align:center;padding:0 16px}
   .divider .mtrack{font-size:12px;color:#a99fff;margin-top:6px;animation:gaunt-rise 1s ease}
   .divider .skip{position:absolute;bottom:26px;font-size:12px;color:#7c7c9a;animation:gaunt-pulse 2s ease-in-out infinite}
@@ -432,8 +433,46 @@ function HERO_VISUAL(num){
   return img;
 }
 
-// Cinematic divider shown briefly before a mission opens.
-const DIVIDER_MS = 1500;
+// Between-track video breaks. Drop media/track1-2.mp4, track2-3.mp4, finale.mp4
+// into the unzipped folder; they play fullscreen when you reach a new track (or finish).
+const TRACK_VIDEO = { "13":"media/track1-2.mp4", "22":"media/track2-3.mp4" };
+function playTrackVideo(num, onDone){
+  const src = TRACK_VIDEO[num];
+  if(!src){ onDone(); return; }
+  const ov = document.createElement("div");
+  ov.className="divider";
+  ov.innerHTML = `<video class="track-video" src="${src}" autoplay muted controls
+      onerror="this.closest('.divider').remove(); (${onDone.toString()})();"></video>
+    <div class="skip" onclick="this.closest('.divider').remove(); window.__tvDone&&window.__tvDone()">skip →</div>`;
+  document.body.appendChild(ov);
+  window.__tvDone = onDone;
+  const v = ov.querySelector("video");
+  if(v){ v.onended = ()=>{ ov.remove(); onDone(); }; }
+}
+function playFinale(){
+  const src = "media/finale.mp4";
+  const ov = document.createElement("div");
+  ov.className="divider";
+  ov.innerHTML = `<video class="track-video" src="${src}" autoplay muted controls
+      onerror="this.closest('.divider').remove()"></video>
+    <div class="skip" onclick="this.closest('.divider').remove()">🏆 finished — close →</div>`;
+  document.body.appendChild(ov);
+  const v = ov.querySelector("video");
+  if(v){ v.onended = ()=>ov.remove(); }
+}
+// Intro video on first launch (once per browser). media/intro.mp4; SVG fallback if missing.
+function playIntro(){
+  if(localStorage.getItem("gauntlet.intro")==="1") return;
+  const ov = document.createElement("div");
+  ov.className="divider";
+  ov.innerHTML = `<video class="track-video" src="media/intro.mp4" autoplay muted controls
+      onerror="this.closest('.divider').remove()"></video>
+    <div class="skip" onclick="this.closest('.divider').remove()">enter the gauntlet →</div>`;
+  document.body.appendChild(ov);
+  localStorage.setItem("gauntlet.intro","1");
+  const v = ov.querySelector("video");
+  if(v){ v.onended = ()=>ov.remove(); }
+}
 function playDivider(num){
   if(localStorage.getItem("gauntlet.lean")==="1"){ renderMissionNow(num); return; }
   const ov = document.createElement("div");
@@ -449,7 +488,11 @@ function playDivider(num){
 function MISSION_TITLE(num){ const m=MISSIONS.find(x=>x.num===num); return m? m.title : num; }
 
 function openMission(num){
-  // play immersive divider, then render
+  // play between-track video break first (if a video exists), then the emblem divider
+  if(TRACK_VIDEO[num]){
+    playTrackVideo(num, ()=>playDivider(num));
+    return;
+  }
   playDivider(num);
 }
 function renderMissionNow(num){
@@ -496,6 +539,10 @@ function renderMissionNow(num){
       else { progress[m.num] = progress[m.num].filter(x=>x!==tid);
         inp.closest('li.task').classList.remove('done'); }
       save();
+      // finale video when the last mission (30) is fully complete
+      if(m.num==="30" && (progress["30"]||[]).length >= m.nTasks){
+        playFinale();
+      }
     };
   });
   window.scrollTo(0,0);
@@ -756,6 +803,7 @@ function playTour(){
   openMission(m.num); window.scrollTo(0,0);
 }
 mergeAdded();
+playIntro();
 renderHome();
 </script>
 </body>
