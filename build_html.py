@@ -246,10 +246,10 @@ TEMPLATE = r"""<!DOCTYPE html>
       <option value="openai">OpenAI</option>
       <option value="local">Other local OpenAI-compatible (LM Studio / Ollama)</option>
     </select>
-    <div class="hint">OpenCode: run it with its OpenAI-compatible server (e.g. <code>opencode serve</code> or its API port) and use <code>http://localhost:&lt;port&gt;/v1</code>. No key needed for local.</div>
+    <div class="hint">OpenCode Zen (hosted, OpenAI-compatible): Base URL <code>https://opencode.ai/zen/v1</code>. Get a key from your Zen account (opencode.ai/zen). For a local OpenCode server, use <code>http://localhost:&lt;port&gt;/v1</code> with no key.</div>
     <label>Base URL</label>
-    <input id="aiBase" placeholder="https://openrouter.ai/api/v1">
-    <label>API key (leave blank for local OpenCode)</label>
+    <input id="aiBase" placeholder="https://opencode.ai/zen/v1">
+    <label>API key (Zen key from opencode.ai/zen; blank for local OpenCode)</label>
     <input id="aiKey" type="password" placeholder="sk-... or empty for localhost">
     <label>Model</label>
     <input id="aiModel" placeholder="anthropic/claude-3.5-sonnet">
@@ -520,7 +520,7 @@ function openAIModal(){
 function applyPreset(){
   const p=document.getElementById("aiProvider").value;
   const presets={
-    opencode:{base:"http://localhost:4099/v1",model:""},
+    opencode:{base:"https://opencode.ai/zen/v1",model:"deepseek-v4-flash-free"},
     openrouter:{base:"https://openrouter.ai/api/v1",model:"anthropic/claude-3.5-sonnet"},
     anthropic:{base:"https://api.anthropic.com/v1",model:"claude-3-5-sonnet-20241022"},
     openai:{base:"https://api.openai.com/v1",model:"gpt-4o"},
