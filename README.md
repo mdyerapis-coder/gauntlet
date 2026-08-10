@@ -59,6 +59,21 @@ Raschka codex PDFs in `pdfs/`. AI writes the scripts; you run, read, and own the
 - **20.** Instruction-tune it (make it an agent brain)
 - **21.** Boss fight — ship your LLM as a serving endpoint
 
+## 🤖 Track 3 — Multimodal + Agent (missions 22–30)
+Track 2 built the model. Track 3 makes it *multimodal and agentic* — the kind of system you orchestrate in HADA/Pantheon, now built by you. Frozen vision encoder + trainable projector, a real tool-call loop, RAG memory, and a served agent app.
+- **22.** Multimodal: image→text fusion architecture
+- **23.** Tool schema & function calling
+- **24.** Agent loop with tools (thought→action→observation)
+- **25.** Train the multimodal projector
+- **26.** Build tool-calling training data
+- **27.** Evaluate the agent
+- **28.** RAG-backed agent
+- **29.** Multimodal + agent demo
+- **30.** Boss fight — ship the agent as a serving endpoint
+
+## 🏅 Progress certificate
+The app's **🏅 Export certificate** button reads your real tick-box progress and downloads a self-contained `gauntlet-certificate-YYYY-MM-DD.html` showing per-track and overall completion.
+
 ## 📦 In the box
 - `pdfs/` — 66 Raschka code companion PDFs (ch2–7 + standalone-model bonus). Your codex.
 - Companions: `~/linux-learning-workbooks/` (fundamentals), `~/hermes-stack-workbooks/`
