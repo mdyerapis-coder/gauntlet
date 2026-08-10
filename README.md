@@ -1,0 +1,53 @@
+# 🛡️ The Agent Engineer's Gauntlet — *Apprenticeship Edition*
+### For builders who direct AI to write the code (like HADA, HPS, llmfit were built)
+
+You're `mdyerapis-coder`. Your repos (HADA, HPS, Pantheon, llmfit) were mostly **AI-written
+under your direction.** That's a real skill — but it caps out if you can only *prompt* and
+not *direct with understanding.* This gauntlet closes that gap.
+
+**The model is apprenticeship, not copy-paste.** AI is your coding partner / junior dev.
+Your responsibility ramps across the 13 missions:
+
+- **Observe & explain** (00–04): AI writes it, you *read what it produced* and explain it.
+  You learn the shape of the thing you've been orchestrating.
+- **Direct the change** (05–09): you tell AI *what to modify* and *why*; AI writes it; you
+  verify. You're the engineer giving the brief.
+- **Architect it** (10–12): you sketch the design in plain words; AI implements; you own
+  the eval + deploy decision. That's the HPS/HADA role, done deliberately.
+
+Every mission gives you a **🤖 prompt to hand your AI coder** (me, Claude, Codex — whoever
+writes your scripts), a **👀 what to watch for** so you understand the output, and a
+**✍️ your move** that forces *you* to make the next call. No mission ends at "paste this."
+
+The companion codex (`pdfs/`, 66 files from Raschka's *Build a Large Language Model From
+Scratch*) is your **solution reference** — open it when you want to see clean, runnable
+code for what you just directed. It's real, not guessed.
+
+## 🎮 How to play
+1. Work **one mission at a time.** Tick `[ ]` boxes.
+2. For each 🤖 prompt: paste it to your AI coder, get the script, **run it**, read the output.
+3. Fill the **✍️ your move** — this is the part only you can do. Don't skip it.
+4. Keep `loot.md`: what AI produced, what surprised you, what you'd change in HADA/HPS.
+5. Each mission ends in a **🏆 Done when** gate. Clear it before advancing.
+
+## 🗺️ 13 missions
+- **00.** Orientation — name the gap, set up your AI-coding arena
+- **01.** Attention — get AI to build it; you trace the data flow
+- **02.** Build the GPT — AI assembles it; you map the block diagram
+- **03.** Decoding & sampling — AI generates; you tune the knobs and explain why
+- **04.** Tokens & context — AI counts cost; you find your own context-stuffing
+- **05.** Vectors & memory — you *direct* AI to add retrieval to a thing you built
+- **06.** RAG from scratch — you brief AI; you pick the chunks that break it
+- **07.** Tool use — you design the tool contract; AI wires the loop
+- **08.** Orchestration patterns — you map HADA/Pantheon to named patterns
+- **09.** Frameworks — you choose one; AI builds; you decide framework-vs-lean
+- **10.** Evals — you write the pass/fail; AI runs the suite
+- **11.** Fine-tune & align — you spec the model+data; AI trains LoRA/DPO
+- **12.** Boss fight — you architect; AI builds; you ship + eval + serve on OVH2
+
+## 📦 In the box
+- `pdfs/` — 66 Raschka code companion PDFs (ch2–7 + standalone-model bonus). Your codex.
+- Companions: `~/linux-learning-workbooks/` (fundamentals), `~/hermes-stack-workbooks/`
+  (production deploy). This gauntlet is the AI-engineering rung between them.
+
+Start at `00-orientation---name-the-gap.md`. Your AI coder is ready when you are.

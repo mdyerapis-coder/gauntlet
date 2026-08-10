@@ -1,0 +1,7 @@
+# Kept out of git: the 38MB codex + the release zip.
+# The release asset (gauntlet-bundle.zip) carries pdfs/ + html together.
+pdfs/
+*.zip
+.ai-eng/
+__pycache__/
+*.pyc
