@@ -18,6 +18,9 @@ AI / Expand gauntlet), follow the one-time setup below.
    python3 gauntlet-proxy.py
    ```
    It prints `http://localhost:8000` and forwards `/zen/*` → `https://opencode.ai/zen/*`.
+
+   **Or just double-click a launcher:** `start.command` (macOS/Linux), `start.sh` (Linux),
+   or `start.bat` (Windows) — each starts the proxy and opens `gauntlet.html` for you.
 2. Open `gauntlet.html`, click **⚙ AI Coder** (top-right).
 3. Provider: **OpenCode**. It auto-fills:
    - Base URL: `http://localhost:8000/zen/v1`
