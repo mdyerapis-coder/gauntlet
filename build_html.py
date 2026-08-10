@@ -478,6 +478,7 @@ function playTrackVideo(num, onDone){
   document.body.appendChild(ov);
   window.__tvDone = onDone;
   AudioEngine.start();
+  AudioEngine.sting("track");
   const v = ov.querySelector("video");
   if(v){ v.onended = ()=>{ ov.remove(); AudioEngine.stop(); onDone(); }; }
 }
@@ -490,6 +491,7 @@ function playFinale(){
     <div class="skip" onclick="this.closest('.divider').remove()">🏆 finished — close →</div>`;
   document.body.appendChild(ov);
   AudioEngine.start();
+  AudioEngine.sting("finale");
   const v = ov.querySelector("video");
   if(v){ v.onended = ()=>{ ov.remove(); AudioEngine.stop(); }; }
 }
@@ -519,6 +521,34 @@ const AudioEngine = (function(){
     stop(){ if(!ctx||!on) return; on=false;
       gain.gain.cancelScheduledValues(ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.0, ctx.currentTime+0.8); },
+    // short one-shot chime/whoosh per moment (plays regardless of ambient toggle)
+    sting(kind){
+      try {
+        if(!ctx) build(); if(ctx.state==="suspended") ctx.resume();
+        const t0=ctx.currentTime, out=ctx.destination;
+        const seq = kind==="finale" ? [523.25,659.25,783.99,1046.5] :
+                    kind==="track"  ? [392.0,523.25,659.25] :
+                                       [261.63,392.0,523.25];
+        seq.forEach((f,i)=>{
+          const o=ctx.createOscillator(), g=ctx.createGain();
+          o.type = i===0?"sine":"triangle"; o.frequency.value=f;
+          const ts=t0+i*0.12;
+          g.gain.setValueAtTime(0.0001, ts);
+          g.gain.exponentialRampToValueAtTime(0.25, ts+0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ts+0.5);
+          o.connect(g); g.connect(out); o.start(ts); o.stop(ts+0.55);
+        });
+        // soft whoosh noise tail
+        const buf=ctx.createBuffer(1, ctx.sampleRate*0.4, ctx.sampleRate);
+        const dat=buf.getChannelData(0);
+        for(let i=0;i<dat.length;i++) dat[i]=(Math.random()*2-1)*Math.pow(1-i/dat.length,2)*0.06;
+        const ns=ctx.createBufferSource(); ns.buffer=buf;
+        const nf=ctx.createBiquadFilter(); nf.type="bandpass"; nf.frequency.value=900;
+        const ng=ctx.createGain(); ng.gain.setValueAtTime(0.0001,t0);
+        ng.gain.exponentialRampToValueAtTime(0.15,t0+0.05); ng.gain.exponentialRampToValueAtTime(0.0001,t0+0.4);
+        ns.connect(nf); nf.connect(ng); ng.connect(out); ns.start(t0);
+      } catch(e){ /* audio not available */ }
+    },
     toggle(){ const cur=localStorage.getItem("gauntlet.audio")==="1";
       localStorage.setItem("gauntlet.audio", cur?"0":"1");
       document.getElementById("audioToggle").textContent = cur? "🔊 Audio: OFF":"🔇 Audio: ON";
@@ -536,6 +566,7 @@ function playIntro(){
     <div class="skip" onclick="this.closest('.divider').remove()">enter the gauntlet →</div>`;
   document.body.appendChild(ov);
   AudioEngine.start();
+  AudioEngine.sting("intro");
   localStorage.setItem("gauntlet.intro","1");
   const v = ov.querySelector("video");
   if(v){ v.onended = ()=>{ ov.remove(); AudioEngine.stop(); }; }

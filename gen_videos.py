@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "media")
 os.makedirs(OUT, exist_ok=True)
 
-W, H, FPS = 320, 180, 25
+W, H, FPS = 640, 360, 25
 VIOLET = (140, 110, 255)
 CYAN   = (86, 212, 255)
 GOLD   = (255, 200, 110)
