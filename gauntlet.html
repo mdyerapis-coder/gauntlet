@@ -72,6 +72,32 @@
     border-radius:8px;padding:8px 10px;font-size:13px}
   .modal .hint{font-size:11px;color:var(--dim);margin-top:4px}
   .modal .row{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+  /* ---- Immersive layer: cinematic divider + animated SVG emblems ---- */
+  @keyframes gaunt-fade { from{opacity:0} to{opacity:1} }
+  @keyframes gaunt-rise { from{opacity:0;transform:translateY(18px) scale(.96)} to{opacity:1;transform:none} }
+  @keyframes gaunt-spin { to{transform:rotate(360deg)} }
+  @keyframes gaunt-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes gaunt-dash { to{stroke-dashoffset:0} }
+  @keyframes gaunt-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+  @keyframes gaunt-ember { 0%{opacity:0;transform:translateY(40px) scale(.6)} 30%{opacity:1} 100%{opacity:0;transform:translateY(-60px) scale(1)} }
+  @keyframes gaunt-sweep { from{stroke-dashoffset:1400} to{stroke-dashoffset:0} }
+  .divider{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 40%, #1a1140 0%, #0a0d14 70%);color:#fff;overflow:hidden;animation:gaunt-fade .5s ease}
+  .divider .emblem{width:min(46vw,260px);height:min(46vw,260px);animation:gaunt-rise .7s ease, gaunt-float 5s ease-in-out 1s infinite}
+  .divider .mtitle{margin-top:18px;font-size:22px;letter-spacing:.5px;animation:gaunt-rise .8s ease;text-align:center;padding:0 16px}
+  .divider .mtrack{font-size:12px;color:#a99fff;margin-top:6px;animation:gaunt-rise 1s ease}
+  .divider .skip{position:absolute;bottom:26px;font-size:12px;color:#7c7c9a;animation:gaunt-pulse 2s ease-in-out infinite}
+  .divider .ring{position:absolute;width:340px;height:340px;border:2px solid rgba(140,110,255,.25);border-radius:50%;animation:gaunt-spin 14s linear infinite}
+  .emblem-spin{transform-origin:50% 50%;animation:gaunt-spin 24s linear infinite}
+  .emblem-dash{stroke-dasharray:1400;stroke-dashoffset:1400;animation:gaunt-sweep 2.4s ease forwards}
+  .emblem-embers circle{animation:gaunt-ember 3.4s ease-in infinite}
+  .emblem-pulse{animation:gaunt-pulse 2.6s ease-in-out infinite}
+  .hero{display:flex;align-items:center;gap:16px;margin:6px 0 14px;padding:14px;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(135deg,#14102e,#0c0f16);animation:gaunt-rise .6s ease}
+  .hero svg{width:74px;height:74px;flex:0 0 auto}
+  .hero .htext{font-size:13px;color:var(--dim)}
+  .hero .htext b{color:var(--txt)}
+  .lean-toggle{font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
 </style>
 </head>
 <body>
@@ -87,6 +113,7 @@
       <button class="primary" id="playBtn">▶ Play guided tour</button>
       <button id="expandBtn">✨ Expand gauntlet (AI)</button>
       <button id="certBtn">🏅 Export certificate</button>
+      <span class="lean-toggle" id="leanToggle" title="Toggle cinematic dividers">🎬 Cinematic: ON</span>
       <button id="resetBtn">Reset progress</button>
       <span id="overall" style="align-self:center;color:var(--dim)"></span>
     </div>
@@ -168,7 +195,117 @@ function renderHome(){
     `Overall: ${total? Math.round(done/total*100):0}%  (${done}/${total})`;
 }
 
+function missionTrack(num){ const n=parseInt(num,10);
+  if(n<=12) return "Track 1 — Understand & Direct AI Engineering";
+  if(n<=21) return "Track 2 — Build the Full LLM";
+  return "Track 3 — Multimodal + Agent"; }
+
+// Inline SVG hero emblems (offline, no assets). Each keyed by motif per mission.
+function EMBLEM(num){
+  const n=parseInt(num,10);
+  const C="#8c6eff", C2="#56d4ff", G="#3df5c4", Y="#ffd166", R="#ff6b9d";
+  const stroke=`stroke="${C}" stroke-width="3" fill="none"`;
+  const wrap=(inner)=>`<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+  // default shield
+  let body = `<path ${stroke} d="M60 12 L100 28 V60 C100 88 80 104 60 110 C40 104 20 88 20 60 V28 Z"/>`;
+  if(n===17){ // training: forge + embers
+    body = `<path ${stroke} d="M40 86 H80 L74 50 Q60 36 46 50 Z"/>
+      <path ${stroke} stroke="${Y}" d="M60 86 V58"/>
+      <g class="emblem-embers"><circle cx="52" cy="60" r="3" fill="${Y}"/>
+      <circle cx="64" cy="52" r="3" fill="${R}" style="animation-delay:1s"/>
+      <circle cx="58" cy="44" r="3" fill="${C2}" style="animation-delay:2s"/></g>`;
+  } else if(n===0||n===12||n===21||n===30){ // boss / orientation: shield with circuit
+    body = `<path ${stroke} d="M60 12 L100 28 V60 C100 88 80 104 60 110 C40 104 20 88 20 60 V28 Z"/>
+      <circle class="emblem-pulse" cx="60" cy="58" r="14" fill="${C}" opacity=".25"/>
+      <path ${stroke} stroke="${C2}" d="M60 44 V72 M48 58 H72"/>`;
+  } else if(n>=13&&n<=21){ // build LLM: stacked transformer blocks
+    body = `<rect x="30" y="20" width="60" height="16" rx="4" ${stroke}/>
+      <rect x="30" y="44" width="60" height="16" rx="4" ${stroke}/>
+      <rect x="30" y="68" width="60" height="16" rx="4" ${stroke}/>
+      <path ${stroke} stroke="${G}" d="M30 28 H90 M30 52 H90 M30 76 H90"/>`;
+  } else if(n===14){ // tokenizer: scattered glyphs
+    body = `<text x="34" y="50" fill="${C2}" font-size="20" font-family="monospace">a</text>
+      <text x="62" y="44" fill="${Y}" font-size="20" font-family="monospace">b</text>
+      <text x="50" y="74" fill="${G}" font-size="20" font-family="monospace">c</text>
+      <text x="78" y="74" fill="${C}" font-size="20" font-family="monospace">≡</text>`;
+  } else if(n===15){ // dataloader: flowing tokens
+    body = `<path class="emblem-dash" ${stroke} stroke="${C2}" d="M20 60 H100"/>
+      <circle class="emblem-pulse" cx="35" cy="60" r="5" fill="${C}"/>
+      <circle class="emblem-pulse" cx="55" cy="60" r="5" fill="${Y}" style="animation-delay:.4s"/>
+      <circle class="emblem-pulse" cx="75" cy="60" r="5" fill="${G}" style="animation-delay:.8s"/>`;
+  } else if(n===16||n===2){ // gpt stack: tower
+    body = `<rect x="36" y="18" width="48" height="84" rx="6" ${stroke}/>
+      <path ${stroke} stroke="${C2}" d="M36 40 H84 M36 62 H84 M36 84 H84"/>
+      <circle class="emblem-spin" cx="60" cy="29" r="6" fill="${Y}"/>`;
+  } else if(n===17){ // training: forge + embers
+    body = `<path ${stroke} d="M40 86 H80 L74 50 Q60 36 46 50 Z"/>
+      <path ${stroke} stroke="${Y}" d="M60 86 V58"/>
+      <g class="emblem-embers"><circle cx="52" cy="60" r="3" fill="${Y}"/>
+      <circle cx="64" cy="52" r="3" fill="${R}" style="animation-delay:1s"/>
+      <circle cx="58" cy="44" r="3" fill="${C2}" style="animation-delay:2s"/></g>`;
+  } else if(n===18||n===3){ // generation: spark
+    body = `<path ${stroke} stroke="${Y}" d="M64 18 L44 64 H60 L52 102 L82 52 H64 Z" fill="${Y}" opacity=".2"/>`;
+  } else if(n===19||n===27){ // eval: gauge
+    body = `<path ${stroke} d="M28 78 A32 32 0 0 1 92 78"/>
+      <path ${stroke} stroke="${G}" d="M28 78 L60 50"/>
+      <circle cx="60" cy="78" r="5" fill="${C}"/>`;
+  } else if(n===22||n===25){ // multimodal: eye
+    body = `<path ${stroke} d="M18 60 Q60 28 102 60 Q60 92 18 60 Z"/>
+      <circle cx="60" cy="60" r="16" ${stroke} stroke="${C2}"/>
+      <circle class="emblem-pulse" cx="60" cy="60" r="7" fill="${C}"/>`;
+  } else if(n===23||n===26||n===24||n===28||n===29){ // tools/agent: gear loop
+    body = `<g class="emblem-spin"><path ${stroke} stroke="${Y}" d="M60 30 l6 10 11 1 -6 10 4 11 -11 -2 -7 9 -7 -9 -11 2 4 -11 -6 -10 11 -1 Z"/></g>
+      <circle cx="60" cy="60" r="9" ${stroke} stroke="${C2}"/>
+      <path class="emblem-dash" ${stroke} stroke="${G}" d="M60 30 a30 30 0 1 1 -22 -10"/>`;
+  } else if(n===1){ // attention: glowing nodes
+    body = `<circle class="emblem-pulse" cx="40" cy="44" r="9" ${stroke}/>
+      <circle class="emblem-pulse" cx="80" cy="44" r="9" ${stroke} stroke="${C2}" style="animation-delay:.6s"/>
+      <circle class="emblem-pulse" cx="60" cy="84" r="9" ${stroke} stroke="${Y}" style="animation-delay:1.2s"/>
+      <path ${stroke} stroke="${C}" opacity=".5" d="M40 44 H80 M40 44 L60 84 M80 44 L60 84"/>`;
+  } else if(n===4||n===5||n===6){ // memory / RAG: book/vector
+    body = `<path ${stroke} d="M30 26 H60 L90 26 V94 H30 Z"/>
+      <path ${stroke} stroke="${C2}" d="M60 26 V94"/>
+      <path class="emblem-dash" ${stroke} stroke="${G}" d="M40 50 H52 M40 64 H52 M70 50 H82 M70 64 H82"/>`;
+  } else if(n===7||n===8||n===9||n===10||n===11){ // orchestration/frameworks
+    body = `<rect x="28" y="34" width="30" height="30" rx="4" ${stroke}/>
+      <rect x="64" y="34" width="30" height="30" rx="4" ${stroke} stroke="${C2}"/>
+      <rect x="46" y="64" width="30" height="22" rx="4" ${stroke} stroke="${G}"/>
+      <path ${stroke} stroke="${Y}" opacity=".6" d="M43 49 H64 M61 75 V64 M79 75 V64"/>`;
+  } else if(n===13){ // intro: spark ascending
+    body = `<path class="emblem-dash" ${stroke} stroke="${C2}" d="M30 90 V30"/>
+      <circle class="emblem-pulse" cx="30" cy="30" r="7" fill="${Y}"/>
+      <text x="44" y="50" fill="${C}" font-size="22" font-family="monospace">{}</text>`;
+  } else if(n===20){ // instruction: chat bubble
+    body = `<path ${stroke} d="M28 36 H92 V76 H52 L40 90 V76 H28 Z"/>
+      <path ${stroke} stroke="${G}" d="M40 52 H80 M40 64 H66"/>`;
+  }
+  // rotating ring for all
+  body += `<circle class="emblem-spin" cx="60" cy="60" r="52" ${stroke} stroke="${C}" opacity=".18" stroke-dasharray="6 10"/>`;
+  return wrap(body);
+}
+
+// Cinematic divider shown briefly before a mission opens.
+const DIVIDER_MS = 1500;
+function playDivider(num){
+  if(localStorage.getItem("gauntlet.lean")==="1"){ renderMissionNow(num); return; }
+  const ov = document.createElement("div");
+  ov.className="divider";
+  ov.innerHTML = `<div class="ring"></div>${EMBLEM(num)}
+    <div class="mtitle">${MISSION_TITLE(num)}</div>
+    <div class="mtrack">${missionTrack(num)}</div>
+    <div class="skip" onclick="renderMissionNow('${num}')">tap to skip →</div>`;
+  document.body.appendChild(ov);
+  ov.onclick=(e)=>{ if(e.target===ov||e.target.classList.contains("skip")) renderMissionNow(num); };
+  setTimeout(()=>{ if(document.body.contains(ov)) renderMissionNow(num); }, DIVIDER_MS);
+}
+function MISSION_TITLE(num){ const m=MISSIONS.find(x=>x.num===num); return m? m.title : num; }
+
 function openMission(num){
+  // play immersive divider, then render
+  playDivider(num);
+}
+function renderMissionNow(num){
+  const old=document.querySelector(".divider"); if(old) old.remove();
   const m = MISSIONS.find(x=>x.num===num);
   if(!m) return;
   CUR = m;
@@ -176,7 +313,7 @@ function openMission(num){
   const el = document.getElementById("mission");
   el.classList.remove("hidden");
   let html = `<div class="back" onclick="renderHome()">← All missions</div>`;
-  html += `<h1>${m.title}</h1>`;
+  html += `<div class="hero">${EMBLEM(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}</div></div>`;
   html += m.html;
   if(m.prompts.length){
     html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>`;
@@ -454,6 +591,14 @@ document.getElementById("resetBtn").onclick = resetProgress;
 document.getElementById("playBtn").onclick = playTour;
 document.getElementById("expandBtn").onclick = expandGauntlet;
 document.getElementById("certBtn").onclick = downloadCertificate;
+document.getElementById("leanToggle").onclick = toggleLean;
+function toggleLean(){
+  const on = localStorage.getItem("gauntlet.lean")==="1" ? "0" : "1";
+  localStorage.setItem("gauntlet.lean", on);
+  document.getElementById("leanToggle").textContent = on==="1" ? "🎬 Cinematic: OFF" : "🎬 Cinematic: ON";
+}
+(function(){ const on = localStorage.getItem("gauntlet.lean")==="1";
+  document.getElementById("leanToggle").textContent = on ? "🎬 Cinematic: OFF" : "🎬 Cinematic: ON"; })();
 document.getElementById("aiGear").onclick = openAIModal;
 document.getElementById("aiCancel").onclick = ()=>document.getElementById("aiModal").classList.add("hidden");
 document.getElementById("aiSave").onclick = saveAISettings;
