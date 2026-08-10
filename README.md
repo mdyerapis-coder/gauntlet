@@ -71,6 +71,16 @@ Track 2 built the model. Track 3 makes it *multimodal and agentic* — the kind 
 - **29.** Multimodal + agent demo
 - **30.** Boss fight — ship the agent as a serving endpoint
 
+## 🚀 Track 4 — Ship to Production (missions 31–37)
+Track 3 built the agent. Track 4 makes it *real infrastructure* — the way you actually run HADA/HPS/Pantheon: deployed, observable, secured, cost-aware, eval-gated, and extensible.
+- **31.** Ship to production (deploy/serve, OVH2/HPS-style)
+- **32.** Observability — logs, metrics, traces
+- **33.** Agent security — sandbox & permissions
+- **34.** Cost & latency engineering (cache, quantize, benchmark)
+- **35.** Evals in production (deploy gate + guardrails)
+- **36.** Tools at scale — MCP-style plugin protocol
+- **37.** Boss fight — the whole stack, live
+
 ## 🏅 Progress certificate
 The app's **🏅 Export certificate** button reads your real tick-box progress and downloads a self-contained `gauntlet-certificate-YYYY-MM-DD.html` showing per-track and overall completion.
 

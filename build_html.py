@@ -249,12 +249,14 @@ TEMPLATE = r"""<!DOCTYPE html>
 </header>
 <div class="wrap">
   <div id="home">
-    <div class="banner">Progress saves in this browser (localStorage). The built-in <b>AI Coder</b> can run prompts and expand the gauntlet — configure it via ⚙ (top-right) to point at OpenCode or a cloud model. Keys stay on your machine.<br><b>Three tracks:</b> 00–12 = understand &amp; direct AI engineering · 13–21 = <b>build a full tiny LLM from scratch</b> · 22–30 = <b>multimodal + agent-with-tools</b>. Export a completion certificate via 🏅.</div>
+    <div class="banner">Progress saves in this browser (localStorage). The built-in <b>AI Coder</b> can run prompts and expand the gauntlet — configure it via ⚙ (top-right) to point at OpenCode or a cloud model. Keys stay on your machine.<br><b>Four tracks:</b> 00–12 = understand &amp; direct AI engineering · 13–21 = <b>build a full tiny LLM from scratch</b> · 22–30 = <b>multimodal + agent-with-tools</b> · 31–37 = <b>ship to production</b>. 🎨 export art prompts · 🔊 ambient audio. Export a completion certificate via 🏅.</div>
     <div class="toolbar">
       <button class="primary" id="playBtn">▶ Play guided tour</button>
       <button id="expandBtn">✨ Expand gauntlet (AI)</button>
       <button id="certBtn">🏅 Export certificate</button>
+      <button id="mediaBtn">🎨 Export art prompts</button>
       <span class="lean-toggle" id="leanToggle" title="Toggle cinematic dividers">🎬 Cinematic: ON</span>
+      <span class="lean-toggle" id="audioToggle" title="Toggle ambient audio">🔊 Audio: OFF</span>
       <button id="resetBtn">Reset progress</button>
       <span id="overall" style="align-self:center;color:var(--dim)"></span>
     </div>
@@ -339,7 +341,8 @@ function renderHome(){
 function missionTrack(num){ const n=parseInt(num,10);
   if(n<=12) return "Track 1 — Understand & Direct AI Engineering";
   if(n<=21) return "Track 2 — Build the Full LLM";
-  return "Track 3 — Multimodal + Agent"; }
+  if(n<=30) return "Track 3 — Multimodal + Agent";
+  return "Track 4 — Ship to Production"; }
 
 // Inline SVG hero emblems (offline, no assets). Each keyed by motif per mission.
 function EMBLEM(num){
@@ -419,6 +422,34 @@ function EMBLEM(num){
   } else if(n===20){ // instruction: chat bubble
     body = `<path ${stroke} d="M28 36 H92 V76 H52 L40 90 V76 H28 Z"/>
       <path ${stroke} stroke="${G}" d="M40 52 H80 M40 64 H66"/>`;
+  } else if(n>=31&&n<=37){ // Track 4: production / ship / observability
+    if(n===31){ // ship: rocket/arrow launching into a server pillar
+      body = `<path ${stroke} d="M60 20 L74 44 H66 L74 64 H46 L54 44 H46 Z" fill="${Y}" opacity=".25"/>
+        <rect x="44" y="74" width="32" height="18" rx="3" ${stroke} stroke="${C2}"/>`;
+    } else if(n===32){ // observability: radar/metrics
+      body = `<circle ${stroke} cx="60" cy="60" r="30"/><circle ${stroke} cx="60" cy="60" r="18" opacity=".6"/>
+        <path class="emblem-dash" ${stroke} stroke="${G}" d="M60 60 L84 40"/>
+        <circle class="emblem-pulse" cx="84" cy="40" r="5" fill="${G}"/>`;
+    } else if(n===33){ // security: shield + lock
+      body = `<path ${stroke} d="M60 18 L86 30 V54 C86 76 72 88 60 92 C48 88 34 76 34 54 V30 Z"/>
+        <rect x="52" y="54" width="16" height="14" rx="2" ${stroke} stroke="${Y}"/>
+        <path ${stroke} stroke="${Y}" d="M54 54 V48 a6 6 0 0 1 12 0"/>`;
+    } else if(n===34){ // cost/latency: lightning + gauge
+      body = `<path ${stroke} stroke="${Y}" d="M62 18 L46 60 H60 L54 96 L78 50 H62 Z" fill="${Y}" opacity=".2"/>
+        <path ${stroke} stroke="${G}" d="M30 78 A30 30 0 0 1 90 78"/>`;
+    } else if(n===35){ // eval gate: checkmark seal
+      body = `<circle ${stroke} cx="60" cy="60" r="28"/>
+        <path class="emblem-dash" ${stroke} stroke="${G}" d="M46 60 L56 72 L78 44"/>`;
+    } else if(n===36){ // mcp/tools at scale: plugin blocks
+      body = `<rect x="30" y="34" width="24" height="24" rx="4" ${stroke}/>
+        <rect x="66" y="34" width="24" height="24" rx="4" ${stroke} stroke="${C2}"/>
+        <rect x="48" y="62" width="24" height="20" rx="4" ${stroke} stroke="${G}"/>
+        <path ${stroke} stroke="${Y}" opacity=".6" d="M54 46 H66 M60 58 V62"/>`;
+    } else { // 37 boss: full stack emblem
+      body = `<path ${stroke} d="M60 12 L100 28 V60 C100 88 80 104 60 110 C40 104 20 88 20 60 V28 Z"/>
+        <circle class="emblem-pulse" cx="60" cy="58" r="14" fill="${C}" opacity=".25"/>
+        <path ${stroke} stroke="${C2}" d="M60 44 V72 M48 58 H72"/>`;
+    }
   }
   // rotating ring for all
   body += `<circle class="emblem-spin" cx="60" cy="60" r="52" ${stroke} stroke="${C}" opacity=".18" stroke-dasharray="6 10"/>`;
@@ -435,7 +466,7 @@ function HERO_VISUAL(num){
 
 // Between-track video breaks. Drop media/track1-2.mp4, track2-3.mp4, finale.mp4
 // into the unzipped folder; they play fullscreen when you reach a new track (or finish).
-const TRACK_VIDEO = { "13":"media/track1-2.mp4", "22":"media/track2-3.mp4" };
+const TRACK_VIDEO = { "13":"media/track1-2.mp4", "22":"media/track2-3.mp4", "31":"media/track3-4.mp4" };
 function playTrackVideo(num, onDone){
   const src = TRACK_VIDEO[num];
   if(!src){ onDone(); return; }
@@ -446,8 +477,9 @@ function playTrackVideo(num, onDone){
     <div class="skip" onclick="this.closest('.divider').remove(); window.__tvDone&&window.__tvDone()">skip →</div>`;
   document.body.appendChild(ov);
   window.__tvDone = onDone;
+  AudioEngine.start();
   const v = ov.querySelector("video");
-  if(v){ v.onended = ()=>{ ov.remove(); onDone(); }; }
+  if(v){ v.onended = ()=>{ ov.remove(); AudioEngine.stop(); onDone(); }; }
 }
 function playFinale(){
   const src = "media/finale.mp4";
@@ -457,9 +489,43 @@ function playFinale(){
       onerror="this.closest('.divider').remove()"></video>
     <div class="skip" onclick="this.closest('.divider').remove()">🏆 finished — close →</div>`;
   document.body.appendChild(ov);
+  AudioEngine.start();
   const v = ov.querySelector("video");
-  if(v){ v.onended = ()=>ov.remove(); }
+  if(v){ v.onended = ()=>{ ov.remove(); AudioEngine.stop(); }; }
 }
+/* ---- Ambient audio: generated in-browser via WebAudio (no asset files, fully offline) ---- */
+const AudioEngine = (function(){
+  let ctx=null, nodes=[], on=false, gain=null;
+  function build(){
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    gain = ctx.createGain(); gain.gain.value=0.0; gain.connect(ctx.destination);
+    // soft evolving pad: two detuned sine oscillators through a slow lowpass
+    const lp = ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=600; lp.connect(gain);
+    [110, 110*1.5, 110*2.01, 220*1.5].forEach((f,i)=>{
+      const o=ctx.createOscillator(); o.type="sine"; o.frequency.value=f;
+      const g=ctx.createGain(); g.gain.value=0.18/(i+1);
+      // gentle LFO on amplitude
+      const lfo=ctx.createOscillator(); lfo.frequency.value=0.05+0.03*i;
+      const lg=ctx.createGain(); lg.gain.value=0.06; lfo.connect(lg); lg.connect(g.gain);
+      o.connect(g); g.connect(lp); o.start(); lfo.start();
+      nodes.push(o,lfo);
+    });
+  }
+  return {
+    start(){ if(localStorage.getItem("gauntlet.audio")!=="1") return;
+      if(!ctx) build(); if(ctx.state==="suspended") ctx.resume(); on=true;
+      gain.gain.cancelScheduledValues(ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime+1.2); },
+    stop(){ if(!ctx||!on) return; on=false;
+      gain.gain.cancelScheduledValues(ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.0, ctx.currentTime+0.8); },
+    toggle(){ const cur=localStorage.getItem("gauntlet.audio")==="1";
+      localStorage.setItem("gauntlet.audio", cur?"0":"1");
+      document.getElementById("audioToggle").textContent = cur? "🔊 Audio: OFF":"🔇 Audio: ON";
+      if(cur) this.stop(); else this.start(); }
+  };
+})();
+
 // Intro video on first launch (once per browser). media/intro.mp4; SVG fallback if missing.
 function playIntro(){
   if(localStorage.getItem("gauntlet.intro")==="1") return;
@@ -469,9 +535,10 @@ function playIntro(){
       onerror="this.closest('.divider').remove()"></video>
     <div class="skip" onclick="this.closest('.divider').remove()">enter the gauntlet →</div>`;
   document.body.appendChild(ov);
+  AudioEngine.start();
   localStorage.setItem("gauntlet.intro","1");
   const v = ov.querySelector("video");
-  if(v){ v.onended = ()=>ov.remove(); }
+  if(v){ v.onended = ()=>{ ov.remove(); AudioEngine.stop(); }; }
 }
 function playDivider(num){
   if(localStorage.getItem("gauntlet.lean")==="1"){ renderMissionNow(num); return; }
@@ -482,6 +549,7 @@ function playDivider(num){
     <div class="mtrack">${missionTrack(num)}</div>
     <div class="skip" onclick="renderMissionNow('${num}')">tap to skip →</div>`;
   document.body.appendChild(ov);
+  AudioEngine.start();
   ov.onclick=(e)=>{ if(e.target===ov||e.target.classList.contains("skip")) renderMissionNow(num); };
   setTimeout(()=>{ if(document.body.contains(ov)) renderMissionNow(num); }, DIVIDER_MS);
 }
@@ -496,6 +564,7 @@ function openMission(num){
   playDivider(num);
 }
 function renderMissionNow(num){
+  AudioEngine.stop();
   const old=document.querySelector(".divider"); if(old) old.remove();
   const m = MISSIONS.find(x=>x.num===num);
   if(!m) return;
@@ -637,7 +706,7 @@ function nextNum(){
 async function expandGauntlet(){
   const st = document.getElementById("overall");
   st.textContent = "AI is drafting a new mission…";
-  runAI(EXPAND_SYS, "Add a new mission that builds on the previous ones (e.g. agent security, observability, or multimodal). Make it genuinely useful.",
+  runAI(EXPAND_SYS, "Add a new mission that builds on the previous ones (e.g. agent security, observability, or multimodal). Make it genuinely useful. Also include a 'heroPrompt' field: a single Grok image-generation prompt (arcane-tech codex style, violet/cyan, NO text) for a hero image of this mission.",
     (text)=>{
       try {
         const m = text.match(/\{[\s\S]*\}/);
@@ -648,14 +717,22 @@ async function expandGauntlet(){
           html: jsMdToHtml(obj.md||""),
           nTasks: (obj.md.match(/-\s*\[ \]/g)||[]).length,
           prompts: obj.prompts||[],
-          pdfs: [], done: obj.done||""
+          pdfs: [], done: obj.done||"", heroPrompt: obj.heroPrompt||""
         };
         MISSIONS.push(newMission);
         const added = JSON.parse(localStorage.getItem(ADDEDKEY)||"[]");
         added.push(newMission); localStorage.setItem(ADDEDKEY, JSON.stringify(added));
+        // collect the hero prompt so the user can generate the art
+        if(newMission.heroPrompt){
+          const pend = JSON.parse(localStorage.getItem("gauntlet.mediaPrompts")||"[]");
+          pend.push({num, title:newMission.title, prompt:newMission.heroPrompt});
+          localStorage.setItem("gauntlet.mediaPrompts", JSON.stringify(pend));
+        }
         st.textContent = "";
         renderHome();
-        alert("✨ Added: "+newMission.title+"\n\nThe gauntlet just expanded. Open it from the home grid.");
+        let msg = "✨ Added: "+newMission.title+"\n\nThe gauntlet just expanded. Open it from the home grid.";
+        if(newMission.heroPrompt) msg += "\n\n🎨 Hero art prompt saved — export it via the 🎨 button to generate the image.";
+        alert(msg);
       } catch(e){
         st.textContent = "";
         alert("Couldn't parse the AI's mission. Raw response:\n\n"+text.slice(0,800));
@@ -740,11 +817,26 @@ function saveAISettings(){
 
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 
+function downloadMediaPrompts(){
+  const pend = JSON.parse(localStorage.getItem("gauntlet.mediaPrompts")||"[]");
+  let txt = "# 🎨 Generated hero-art prompts (from Expand gauntlet)\n\n";
+  txt += "Shared style: Cinematic concept art, deep violet (#1a1140) and cyan (#56d4ff) palette with electric purple (#8c6eff) accents and ember-gold sparks, dark atmospheric, volumetric haze, NO text/watermarks. 16:9.\n\n";
+  if(!pend.length){ txt += "(none yet — use ✨ Expand gauntlet to collect hero prompts.)\n"; }
+  pend.forEach(p=>{ txt += `## ${p.num} — ${p.title}\n${p.prompt}\n\n`; });
+  const blob = new Blob([txt], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "gauntlet-art-prompts.txt";
+  document.body.appendChild(a); a.click(); a.remove();
+  alert("Exported "+pend.length+" hero-art prompt(s) to gauntlet-art-prompts.txt");
+}
+
 function downloadCertificate(){
   let total=0, done=0;
-  const tracks = {"Track 1 — Understand & Direct (00–12)":[0,12],
-                  "Track 2 — Build the Full LLM (13–21)":[13,21],
-                  "Track 3 — Multimodal + Agent (22–30)":[22,30]};
+  const tracks = {"Track 1 - Understand & Direct (00-12)":[0,12],
+                  "Track 2 - Build the Full LLM (13-21)":[13,21],
+                  "Track 3 - Multimodal + Agent (22-30)":[22,30],
+                  "Track 4 - Ship to Production (31-37)":[31,37]};
   let rows = "";
   let trackSumm = "";
   for(const [name,[lo,hi]] of Object.entries(tracks)){
@@ -786,14 +878,18 @@ document.getElementById("resetBtn").onclick = resetProgress;
 document.getElementById("playBtn").onclick = playTour;
 document.getElementById("expandBtn").onclick = expandGauntlet;
 document.getElementById("certBtn").onclick = downloadCertificate;
+document.getElementById("mediaBtn").onclick = downloadMediaPrompts;
 document.getElementById("leanToggle").onclick = toggleLean;
+document.getElementById("audioToggle").onclick = ()=>AudioEngine.toggle();
 function toggleLean(){
   const on = localStorage.getItem("gauntlet.lean")==="1" ? "0" : "1";
   localStorage.setItem("gauntlet.lean", on);
   document.getElementById("leanToggle").textContent = on==="1" ? "🎬 Cinematic: OFF" : "🎬 Cinematic: ON";
 }
 (function(){ const on = localStorage.getItem("gauntlet.lean")==="1";
-  document.getElementById("leanToggle").textContent = on ? "🎬 Cinematic: OFF" : "🎬 Cinematic: ON"; })();
+  document.getElementById("leanToggle").textContent = on ? "🎬 Cinematic: OFF" : "🎬 Cinematic: ON";
+  const ao = localStorage.getItem("gauntlet.audio")==="1";
+  document.getElementById("audioToggle").textContent = ao ? "🔇 Audio: ON" : "🔊 Audio: OFF"; })();
 document.getElementById("aiGear").onclick = openAIModal;
 document.getElementById("aiCancel").onclick = ()=>document.getElementById("aiModal").classList.add("hidden");
 document.getElementById("aiSave").onclick = saveAISettings;
