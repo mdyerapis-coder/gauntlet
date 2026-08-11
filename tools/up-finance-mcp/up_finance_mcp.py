@@ -98,7 +98,7 @@ def financial_budget_preview(
     if not pay_cycle_end:
         pay_cycle_end = today.isoformat()
     if not pay_cycle_start:
-        pay_cycle_start = (today - timedelta(days=today.weekday() + 7)).isoformat()
+        pay_cycle_start = (today - timedelta(days=13)).isoformat()
 
     rows = _transactions(pay_cycle_start, pay_cycle_end)
     by_category: dict[str, float] = defaultdict(float)
@@ -110,9 +110,10 @@ def financial_budget_preview(
         attrs = row.get("attributes") or {}
         amount = attrs.get("amount") or {}
         value = float(amount.get("value", 0) or 0)
-        if value >= 0:
+        transaction_type = str(attrs.get("transactionType") or "")
+        if value > 0 and transaction_type in {"Direct Credit", "Payment Received", "Osko Payment Received", "Deposit"}:
             income += value
-        else:
+        elif value < 0 and transaction_type in {"Purchase", "International Purchase", "Payment", "Pay Anyone"}:
             spending += abs(value)
             by_category[_category(row)] += abs(value)
         transaction_count += 1
