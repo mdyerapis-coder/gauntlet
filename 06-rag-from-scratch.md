@@ -7,6 +7,15 @@ learn what retrieval can and can't do.
 **🧠 Why:** Fixes the Mission 04 leak for real. HADA evidence + Pantheon brain are retrieval
 problems. You'll direct the build, then stress-test it yourself.
 
+**🧩 In plain English:** RAG (Retrieval-Augmented Generation) is Mission 05's embed-and-search
+trick, aimed at one specific job: instead of "the model needs to have the entire document
+archive stuffed into its context," it becomes "the model needs the right 3 paragraphs
+handed to it." You search first, then generate using only what came back. That's the whole
+idea — and it fails in specific, learnable ways: an answer that's split across two chunks,
+or a chunk that scores as "close" by wording but is actually irrelevant, both trip it up.
+Today you build it, then deliberately go break it, so you know what those failures look
+like before they surprise you in production.
+
 ## 🛠️ Activity
 - [ ] **Reuse loot:** AI's `memory.py` from Mission 05 is your retrieval engine.
 - [ ] **🤖 Prompt to give your AI coder:**

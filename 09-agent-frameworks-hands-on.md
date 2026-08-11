@@ -7,6 +7,15 @@ spirit).
 **🧠 Why:** HPS/HADA are framework-free by design. Knowing what smolagents/langchain/llamaindex
 hide lets you choose deliberately — prototype with framework, ship lean.
 
+**🧩 In plain English:** An agent framework is just someone else's packaged version of the
+exact loop you already built by hand in Missions 05–07 — parsing the model's tool-call
+output, retrying when it's malformed, keeping track of conversation history, doing the
+retrieval plumbing. That's genuinely useful for prototyping fast. The cost is you're now
+depending on someone else's abstraction, with its own opinions about how things should
+work. Today's job isn't "learn a framework" for its own sake — it's noticing exactly *what*
+it quietly did for you, so choosing to use one (or not) in production becomes a deliberate
+call instead of a default.
+
 ## 🛠️ Activity — you choose one (or all three, they're small):
 - [ ] **smolagents:** https://github.com/huggingface/smolagents — `pip install smolagents`,
       build a CodeAgent with one tool. Compare to your Mission 07 loop.

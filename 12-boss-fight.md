@@ -8,6 +8,14 @@ role, done deliberately.
 (production) to the AI engineering you just learned. You close the loop: architect → build →
 prove → serve.
 
+**🧩 In plain English:** Every mission so far handed you one gear out of the machine —
+attention, the model stack, sampling, tokens, embeddings, retrieval, tools, orchestration
+patterns, frameworks, evals, fine-tuning. A boss fight is where you finally watch all the
+gears turn together: something gets designed on purpose (architecture), built by AI under
+your direction, *proven* to actually work using your own eval instead of a gut feeling, and
+put somewhere a real request can reach it (served) — with the same guardrails any endpoint
+exposed to the world actually needs.
+
 ## 🛠️ Activity
 - [ ] **You architect (pick one):**
   - (a) RAG Q&A over `~/hermes-stack-workbooks/` + `~/linux-learning-workbooks/`

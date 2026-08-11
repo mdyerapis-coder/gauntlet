@@ -6,6 +6,15 @@ AI does the LoRA/DPO training. Tie the base-model pick back to what llmfit would
 **🧠 Why:** llmfit matches hardware to models, but what if you need a model fluent in your
 domain (HPS provisioning, HADA release policy)? You architect the fine-tune; AI executes.
 
+**🧩 In plain English:** Fine-tuning takes an already-trained general model and nudges its
+weights toward a specific task or style using your own examples, instead of training
+something from zero. **LoRA** is a cheap way to do that: instead of updating all of the
+model's parameters (expensive — you'd need to store a full new copy), you freeze the
+original weights and train a small set of new ones bolted alongside them, often well under
+1% of the original parameter count. **DPO** is a fine-tuning method that skips the extra
+step of training a separate "reward model" — instead it learns directly from pairs of (a
+good response, a bad response) to the same prompt, nudging the model toward the good one.
+
 ## 🛠️ Activity
 - [ ] **Open the codex:** `pdfs/ch06/01_main-chapter-code/ch06.pdf` (classification finetune)
       + `pdfs/ch07/01_main-chapter-code/ch07.pdf` (instruction finetune). For DPO:
@@ -16,7 +25,7 @@ domain (HPS provisioning, HADA release policy)? You architect the fine-tune; AI 
 - [ ] **🤖 Prompt to give your AI coder:**
       > "In ~/ai-eng (pip install peft), load <base model>, attach LoRA to attention, train on
       > <my tiny set>, print trainable-param % (should be <<100%), and run my eval.py. If no
-      GPU, simulate the training loop and report the expected param savings."
+      > GPU, simulate the training loop and report the expected param savings."
 - [ ] **Run it.** Confirm LoRA trains far fewer params than full finetune.
 - [ ] **👀 What to watch for:** DPO needs (chosen, rejected) pairs, not a reward model —
       see `create-preference-data-ollama.pdf`. Match the method to your data.

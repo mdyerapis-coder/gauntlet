@@ -7,10 +7,22 @@ AI *why* a served model misbehaves.
 **🧠 Why:** You provision/serve these. Understanding the internal diagram means you can
 brief AI precisely ("add a LayerNorm before the residual," not "fix it").
 
+**🧩 In plain English:** A GPT model is really just: a lookup table that turns each token
+into a list of numbers (a vector), then that vector passed through the *same kind* of block
+— attention (Mission 01) plus a small extra neural net — repeated N times back to back,
+then one final lookup table run in reverse to turn the last vector back into "which token
+comes next." Two details make stacking that many blocks actually work: **LayerNorm**, which
+just rescales the numbers at each step so they don't explode or shrink to nothing after
+passing through dozens of blocks, and a **residual connection** (`x + sublayer(x)`) — a
+shortcut wire that carries the original input past a block untouched and adds it back on
+top of whatever the block computed. Without that shortcut, stacking many blocks tends to
+lose the signal entirely.
+
 ## 🛠️ Activity
-- [ ] **Open the codex:** `pdfs/ch04/01_main-chapter-code/ch04.pdf` §4.1–4.3.
-- [ ] **Bonus:** `pdfs/ch04/02_performance-analysis/flops-analysis.pdf` — how params → compute.
-      This is what llmfit *should* reason about.
+- [ ] **Open the codex:** `pdfs/ch04/01_main-chapter-code/ch04.pdf` §4.1–4.3 — the full
+      block-by-block build, the same one your AI coder is about to reproduce below.
+- [ ] **Bonus:** `pdfs/ch04/02_performance-analysis/flops-analysis.pdf` — how parameter
+      count turns into actual compute cost. This is what llmfit *should* reason about.
 - [ ] **🤖 Prompt to give your AI coder:**
       > "In ~/ai-eng, build gpt_model.py: token + positional embeddings, N transformer
       > blocks (reuse attention.py's attention + an MLP), final LayerNorm + linear head to

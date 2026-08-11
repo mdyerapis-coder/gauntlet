@@ -33,9 +33,33 @@ def md_to_html(text: str):
     in_ul = False
     in_code = False
     code_buf = []
+    para_buf = []
+    li_buf = None  # {"is_task": bool, "lines": [str, ...]} for the list item currently accumulating
+
+    def flush_li():
+        nonlocal li_buf
+        if li_buf is None:
+            return
+        joined = " ".join(li_buf["lines"])
+        if li_buf["is_task"]:
+            label = md_inline(joined)
+            tid = sum(1 for x in out if "data-task=" in x)
+            out.append(f'<li class="task"><label><input type="checkbox" data-task="{tid}"><span>{label}</span></label></li>')
+        else:
+            out.append("<li>" + md_inline(joined) + "</li>")
+        li_buf = None
+
+    def flush_para():
+        if para_buf:
+            joined = " ".join(para_buf)
+            cls = ' class="explainer"' if joined.lstrip().lstrip("*").startswith("🧩") else ""
+            out.append(f"<p{cls}>" + md_inline(joined) + "</p>")
+            para_buf.clear()
+
     while i < len(lines):
         line = lines[i]
         if line.strip().startswith("```"):
+            flush_li(); flush_para()
             if in_ul:
                 out.append("</ul>"); in_ul = False
             if in_code:
@@ -48,28 +72,41 @@ def md_to_html(text: str):
             code_buf.append(line); i += 1; continue
         m = re.match(r"^(#{1,4})\s+(.*)$", line)
         if m:
+            flush_li(); flush_para()
             if in_ul: out.append("</ul>"); in_ul = False
             lvl = len(m.group(1))
             out.append(f"<h{lvl}>{md_inline(m.group(2))}</h{lvl}>"); i += 1; continue
         if line.lstrip().startswith(">"):
+            flush_li(); flush_para()
             if in_ul: out.append("</ul>"); in_ul = False
             out.append("<blockquote>" + md_inline(line.lstrip()[1:].strip()) + "</blockquote>"); i += 1; continue
         tm = TASK_RE.match(line)
         if tm:
+            flush_li()
             if not in_ul:
+                flush_para()
                 out.append('<ul class="tasks">'); in_ul = True
-            label = md_inline(tm.group(3))
-            out.append(f'<li class="task"><label><input type="checkbox" data-task="{len([1 for x in out if "data-task=" in x])}"><span>{label}</span></label></li>')
+            li_buf = {"is_task": True, "lines": [tm.group(3).strip()]}
             i += 1; continue
         if re.match(r"^\s*[-*]\s+", line):
+            flush_li()
             if not in_ul:
+                flush_para()
                 out.append('<ul class="tasks">'); in_ul = True
-            out.append("<li>" + md_inline(line.lstrip()[2:].strip()) + "</li>"); i += 1; continue
+            li_buf = {"is_task": False, "lines": [line.lstrip()[2:].strip()]}
+            i += 1; continue
         if not line.strip():
+            flush_li(); flush_para()
             if in_ul: out.append("</ul>"); in_ul = False
             i += 1; continue
-        if in_ul: out.append("</ul>"); in_ul = False
-        out.append("<p>" + md_inline(line) + "</p>"); i += 1
+        if in_ul and li_buf is not None:
+            li_buf["lines"].append(line.strip())
+        else:
+            if in_ul:
+                flush_li(); out.append("</ul>"); in_ul = False
+            para_buf.append(line.strip())
+        i += 1
+    flush_li(); flush_para()
     if in_ul: out.append("</ul>")
     if in_code and code_buf:
         out.append("<pre><code>" + html.escape("\n".join(code_buf)) + "</code></pre>")
@@ -102,15 +139,19 @@ def extract_prompts(text: str):
 
 
 def extract_done(text: str):
-    m = re.search(r"🏆\s*(.*)", text)
-    if not m: return ""
-    out = []; started = False
-    for ln in text[m.start():].splitlines()[1:]:
-        if re.match(r"^#|\*\*|🛡️", ln): break
-        if ln.strip():
-            started = True; out.append(ln.strip())
-        elif started: break
-    return " ".join(out)
+    lines = text.splitlines()
+    for i, ln in enumerate(lines):
+        if "🏆" not in ln:
+            continue
+        # strip a leading "- [ ] **🏆 Done when:**"-style label, keep the rest of the line
+        first = re.sub(r"^\s*(?:-\s*\[[ xX]\]\s*)?\*{0,2}🏆[^:]*:?\*{0,2}\s*", "", ln).strip()
+        out = [first] if first else []
+        for nxt in lines[i + 1:]:
+            if not nxt.strip() or re.match(r"^#|\*\*|🛡️", nxt.strip()):
+                break
+            out.append(nxt.strip())
+        return " ".join(x for x in out if x)
+    return ""
 
 
 def build():
@@ -190,6 +231,9 @@ TEMPLATE = r"""<!DOCTYPE html>
   .pdflink:hover{text-decoration:underline}
   .done-box{background:rgba(63,185,80,.08);border:1px solid var(--green);border-radius:10px;
     padding:12px;margin:16px 0;color:#bff0c4}
+  .mission p.explainer{background:rgba(57,197,207,.08);border:1px solid var(--cyan);border-radius:10px;
+    padding:12px 14px;margin:14px 0;color:#d7f6f9}
+  .mission p.explainer strong{color:var(--cyan)}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .hidden{display:none!important}
   .banner{background:rgba(88,166,255,.08);border:1px solid var(--accent);border-radius:10px;

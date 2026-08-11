@@ -7,6 +7,15 @@ AI wires the execute→feed-back loop.
 **🧠 Why:** Your agents already call tools. Designing the contract yourself means you can
 spec it precisely and validate it — the discipline HPS wants at a provisioning boundary.
 
+**🧩 In plain English:** Function calling ("tool use") just means the model can, instead of
+only outputting prose, output a structured *request* — something like
+`{"tool": "get_weather", "args": {"city": "Perth"}}`. Your code reads that request, decides
+whether it's valid, actually runs the real function if so, and feeds the result back in so
+the model can use it in its next answer. The critical, easy-to-miss point: the model never
+*does* anything itself. It only ever asks. Your code is the one deciding whether to trust
+and execute that ask — which is exactly why designing the contract (name, arguments, what
+counts as valid) is your job, not something to leave to whatever the model happens to emit.
+
 ## 🛠️ Activity
 - [ ] **Read (free):** https://platform.openai.com/docs/guides/function-calling (protocol is
       provider-agnostic).

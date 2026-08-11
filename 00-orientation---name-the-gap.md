@@ -8,9 +8,19 @@ but "build X *this way* because of Y." First, map the territory.
 silently degrades, you can only re-prompt. Understanding the internals turns re-prompting
 into *directing.*
 
+**🧩 In plain English:** An LLM is not magic and it's not really a "black box" — it's a very
+large, very specific pile of numbers (called *parameters*) arranged in a repeating structure,
+fed text that's been chopped into chunks (*tokens*), and trained to guess the next chunk
+over and over until it gets good at it. That's the whole trick. You don't need to memorize
+the math to direct AI well — you need to be comfortable enough with the *shape* of that
+trick that you can read what your AI coder writes and catch it when something's off. This
+gauntlet cracks the pile open one layer at a time, starting now.
+
 ## 🛠️ Activity
 - [ ] **Open the codex:** `pdfs/ch03/01_main-chapter-code/ch03.pdf` — just the first page.
-      Register that the real, runnable attention code is sitting in this folder for you.
+      This is a real, runnable implementation of the exact mechanism you'll build in Mission
+      01 (attention) — you're not expected to understand it yet, just confirm it's here and
+      it's real code, not a textbook diagram.
 - [ ] **Read (free, 10 min):** https://www.anthropic.com/engineering/building-effective-agents
       — note which patterns your HADA/Pantheon already use. One line each.
 - [ ] **Audit your own repos for implicit model assumptions** (you directed these — what did

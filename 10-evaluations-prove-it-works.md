@@ -7,6 +7,15 @@ the **evaluation spec** (questions + pass/fail); AI builds + runs the suite. Eva
 **🧠 Why:** You've been patching agents by feel. Writing the eval yourself means you can tell
 AI *how to prove* an agent works, then trust the result.
 
+**🧩 In plain English:** An eval is just a test suite, except the thing under test is a
+model or an agent instead of ordinary code: a fixed list of questions with known-good
+answers, run automatically every time something changes, and scored (pass/fail, or graded
+by a second model acting as judge — "LLM-as-judge"). Without one, "did that prompt tweak
+actually help?" gets answered by vibes. With one, it gets answered by a number that either
+moved or didn't. Today you write the questions and the bar yourself, *before* any AI
+touches it — that's the part only you can do, because only you know what "correct" means
+for your system.
+
 ## 🛠️ Activity
 - [ ] **Open the codex:** `pdfs/ch07/03_model-evaluation/llm-instruction-eval-ollama.pdf` (and
       the `-openai.pdf` variant). See how the book evaluates instruction-following.
@@ -18,7 +27,7 @@ AI *how to prove* an agent works, then trust the result.
       > Print both my manual key vs judge, and flag disagreements."
 - [ ] **Run it.** Does it pass your bar? Do you + the judge agree?
 - [ ] **Correlation:** skim `pdfs/ch07/03_model-evaluation/scores/correlation-analysis.pdf`
-      (why we check if automated judges track humans).
+      — why you check whether an automated judge's grades actually track a human's.
 
 **✍️ Your move:** In `loot.md`, **design one eval for a real HADA/HPS step** — e.g. "does the
 release gate reject a tampered artifact?" Write the pass/fail criterion *you* would accept.

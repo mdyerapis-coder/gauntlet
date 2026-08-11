@@ -6,6 +6,16 @@ now **name what you built** and find where it leaks. Deliberate design beats ins
 **🧠 Why:** Anthropic's patterns will feel familiar — that's the point. You'll see your own
 decisions reflected and spot the gaps to brief AI on next time.
 
+**🧩 In plain English:** Once you have more than one AI call working together, you're doing
+"orchestration," and it turns out there are only a handful of named shapes it takes: a
+straight pipeline where one call's output feeds the next (**prompt chaining**), a
+switchboard that routes different requests to different specialists (**routing**), several
+calls fired at once and combined (**parallelization**), a manager that splits work across
+workers and merges their results (**orchestrator-worker**), and a generate→critique→improve
+loop (**evaluator-optimizer**). None of this is new theory — it's a vocabulary for systems
+you've *already built by instinct.* Naming the pattern you're already running is usually the
+fastest way to notice the pattern you're missing.
+
 ## 🛠️ Activity
 - [ ] **Read (free):** https://www.anthropic.com/engineering/building-effective-agents —
       prompt chaining, routing, parallelization, orchestrator-worker, evaluator-optimizer.
