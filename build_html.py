@@ -239,9 +239,65 @@ TEMPLATE = r"""<!DOCTYPE html>
   .hero .htext{font-size:13px;color:var(--dim)}
   .hero .htext b{color:var(--txt)}
   .lean-toggle{font-size:11px;color:var(--dim);cursor:pointer;user-select:none}
+  /* ---- Game feel: XP/streak, toasts, particles, achievements, boss, path map ---- */
+  .xpbar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+  .xpbar .lvl{color:var(--yellow);font-weight:700}
+  .xpbar .streak{color:#ff9f5b}
+  .xp-track{width:90px;height:6px;background:#0b0f14;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+  .xp-track > i{display:block;height:100%;background:linear-gradient(90deg,var(--yellow),#ff9f5b);width:0;transition:width .4s ease}
+
+  #toasts{position:fixed;top:16px;right:16px;z-index:60;display:flex;flex-direction:column;gap:8px;max-width:min(320px,90vw)}
+  .toast{background:var(--panel);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);animation:gaunt-toast-in .35s ease, gaunt-toast-out .4s ease 2.6s forwards;font-size:13px}
+  .toast b{display:block;margin-bottom:2px}
+  .toast.gold{border-color:var(--yellow)}
+  .toast.epic{border-color:var(--magenta)}
+  @keyframes gaunt-toast-in{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+  @keyframes gaunt-toast-out{to{opacity:0;transform:translateX(30px)}}
+
+  .burst{position:absolute;pointer-events:none;font-size:14px;animation:gaunt-burst .6s ease forwards;z-index:50}
+  @keyframes gaunt-burst{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:var(--burst-t) scale(1.3)}}
+  ul.tasks li.task.just-done{animation:gaunt-task-pop .4s ease}
+  @keyframes gaunt-task-pop{0%{transform:scale(1)}40%{transform:scale(1.01);background:rgba(63,185,80,.12)}100%{transform:scale(1)}}
+
+  .confetti{position:fixed;top:-12px;width:8px;height:14px;z-index:55;pointer-events:none;animation:gaunt-confetti linear forwards}
+  @keyframes gaunt-confetti{to{transform:translateY(108vh) rotate(540deg);opacity:.9}}
+
+  .track-section{margin:22px 0 6px}
+  .track-head{display:flex;align-items:baseline;gap:10px;margin:0 0 10px;flex-wrap:wrap}
+  .track-head h3{margin:0;font-size:13px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  .track-head .tpct{font-size:12px;color:var(--dim)}
+  .track-path{position:relative}
+  .track-path::before{content:"";position:absolute;left:0;right:0;top:38px;height:2px;
+    background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 14px);z-index:0}
+  .card{position:relative;z-index:1}
+  .card.done{border-color:var(--green);box-shadow:0 0 0 1px rgba(63,185,80,.25) inset}
+  .card.done .num{color:var(--green)}
+  .card.next{border-color:var(--accent);box-shadow:0 0 18px rgba(88,166,255,.25)}
+  .card.next::after{content:"▶ start here";position:absolute;top:-9px;right:10px;background:var(--accent);
+    color:#04101f;font-size:10px;font-weight:700;padding:1px 8px;border-radius:8px;letter-spacing:.03em}
+  .card.boss{border-color:var(--red);background:linear-gradient(160deg,#241019,var(--panel))}
+  .card.boss .num{color:var(--red)}
+  .card.boss .num::before{content:"⚔ "}
+
+  .divider.boss{background:radial-gradient(circle at 50% 40%, #3a0d18 0%, #0a0d14 70%)}
+  .divider.boss .mtitle{color:#ffdede}
+  .divider.boss .ring{border-color:rgba(255,90,90,.35)}
+  .divider .boss-tag{color:var(--red);font-weight:700;letter-spacing:.1em;font-size:12px;margin-top:14px;
+    animation:gaunt-pulse 1.4s ease-in-out infinite}
+  .hero.boss{border-color:var(--red);background:linear-gradient(135deg,#241019,#0c0f16)}
+
+  .ach-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:50vh;overflow:auto}
+  .ach{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#0b0f14}
+  .ach.earned{border-color:var(--yellow)}
+  .ach .aicon{font-size:22px;width:28px;text-align:center;filter:grayscale(1);opacity:.4}
+  .ach.earned .aicon{filter:none;opacity:1}
+  .ach .atext b{display:block;font-size:13px}
+  .ach .atext span{font-size:11px;color:var(--dim)}
 </style>
 </head>
 <body>
+<div id="toasts"></div>
 <header>
   <h1>🛡️ The Agent Engineer's Gauntlet</h1>
   <div class="sub">Apprenticeship edition — AI writes the scripts, <b>you</b> direct &amp; understand. Click a mission to play.</div>
@@ -257,10 +313,12 @@ TEMPLATE = r"""<!DOCTYPE html>
       <button id="mediaBtn">🎨 Export art prompts</button>
       <span class="lean-toggle" id="leanToggle" title="Toggle cinematic dividers">🎬 Cinematic: ON</span>
       <span class="lean-toggle" id="audioToggle" title="Toggle ambient audio">🔊 Audio: OFF</span>
+      <button id="achBtn">🏆 Achievements</button>
       <button id="resetBtn">Reset progress</button>
+      <span class="xpbar" id="xpbar"></span>
       <span id="overall" style="align-self:center;color:var(--dim)"></span>
     </div>
-    <div class="grid" id="grid"></div>
+    <div id="grid"></div>
     <footer>Built from your mission workbooks. Codex PDFs (Raschka, <i>Build a LLM From Scratch</i>) ship in the bundle.</footer>
   </div>
 
@@ -294,19 +352,41 @@ TEMPLATE = r"""<!DOCTYPE html>
   </div>
 </div>
 
+<!-- Achievements modal -->
+<div id="achModal" class="modal hidden">
+  <div class="box">
+    <h3 style="margin-top:0">🏆 Achievements</h3>
+    <div class="ach-list" id="achList"></div>
+    <div class="row"><button id="achClose">Close</button></div>
+  </div>
+</div>
+
 <script>
 const MISSIONS = /*__MISSIONS__*/;
 const KEY = "gauntlet.progress.v1";
 const AIKEY = "gauntlet.ai.v1";
 const ADDEDKEY = "gauntlet.added.v1";
+const XPKEY = "gauntlet.xp.v1";
+const STREAKKEY = "gauntlet.streak.v1";
+const ACHKEY = "gauntlet.achievements.v1";
+const BOSS_NUMS = new Set(["12","21","30","37"]);
 let progress = {};
 let ai = {};
 let CUR = null;
+let xp = 0;
+let streak = { date: null, count: 0 };
+let earned = [];
 try { progress = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch(e){ progress = {}; }
 try { ai = JSON.parse(localStorage.getItem(AIKEY) || "{}"); } catch(e){ ai = {}; }
+try { xp = parseInt(localStorage.getItem(XPKEY)||"0",10) || 0; } catch(e){ xp = 0; }
+try { streak = JSON.parse(localStorage.getItem(STREAKKEY) || "null") || {date:null,count:0}; } catch(e){ streak = {date:null,count:0}; }
+try { earned = JSON.parse(localStorage.getItem(ACHKEY) || "[]"); } catch(e){ earned = []; }
 
 function save(){ localStorage.setItem(KEY, JSON.stringify(progress)); }
 function saveAI(){ localStorage.setItem(AIKEY, JSON.stringify(ai)); }
+function saveXP(){ localStorage.setItem(XPKEY, String(xp)); }
+function saveStreak(){ localStorage.setItem(STREAKKEY, JSON.stringify(streak)); }
+function saveAch(){ localStorage.setItem(ACHKEY, JSON.stringify(earned)); }
 function mergeAdded(){
   try {
     const added = JSON.parse(localStorage.getItem(ADDEDKEY) || "[]");
@@ -315,27 +395,161 @@ function mergeAdded(){
 }
 function doneCount(m){ return (progress[m.num]||[]).length; }
 function pct(m){ return m.nTasks? Math.round(doneCount(m)/m.nTasks*100):0; }
+function isBoss(num){ return BOSS_NUMS.has(num); }
 
+/* ---------------- Game feel: XP, streaks, toasts, particles, achievements ---------------- */
+function levelInfo(){
+  let lvl=1, need=150, floor=0;
+  while(xp >= floor+need){ floor += need; lvl++; need = 150 + (lvl-1)*40; }
+  return { lvl, into: xp-floor, need, floor };
+}
+function renderXPBar(){
+  const el = document.getElementById("xpbar");
+  if(!el) return;
+  const li = levelInfo();
+  const streakTxt = streak.count>1 ? ` · <span class="streak">🔥 ${streak.count}-day streak</span>` : "";
+  el.innerHTML = `<span class="lvl">Lv.${li.lvl}</span><span class="xp-track"><i style="width:${Math.round(li.into/li.need*100)}%"></i></span>${streakTxt}`;
+}
+function toast(title, body, cls){
+  const c = document.getElementById("toasts");
+  if(!c) return;
+  const t = document.createElement("div");
+  t.className = "toast" + (cls? " "+cls : "");
+  t.innerHTML = `<b>${title}</b>${body?`<span>${body}</span>`:""}`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+function addXP(n){
+  const before = levelInfo().lvl;
+  xp += n; saveXP();
+  const after = levelInfo().lvl;
+  renderXPBar();
+  if(after>before){ AudioEngine.sting("levelup"); toast(`⭐ Level ${after}!`, "Keep going, Engineer.", "gold"); }
+}
+function bumpStreak(){
+  const today = new Date().toISOString().slice(0,10);
+  if(streak.date === today) return;
+  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  streak.count = (streak.date === yesterday) ? streak.count+1 : 1;
+  streak.date = today;
+  saveStreak();
+  renderXPBar();
+  if(streak.count>1) toast(`🔥 ${streak.count}-day streak`, "Don't break the chain.");
+}
+function burst(el){
+  const rect = el.getBoundingClientRect();
+  const syms = ["✦","✓","✨"];
+  const colors = ["#3fb950","#58a6ff","#ffd166"];
+  for(let i=0;i<6;i++){
+    const s = document.createElement("span");
+    s.className = "burst"; s.textContent = syms[i%syms.length];
+    const ang = (Math.PI*2*i/6) + Math.random()*0.5;
+    const dist = 22+Math.random()*14;
+    s.style.setProperty("--burst-t", `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`);
+    s.style.left = (rect.left+window.scrollX+8)+"px";
+    s.style.top = (rect.top+window.scrollY+8)+"px";
+    s.style.color = colors[i%colors.length];
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(), 650);
+  }
+}
+function confettiBurst(){
+  const colors = ["#8c6eff","#56d4ff","#3df5c4","#ffd166","#ff6b9d"];
+  for(let i=0;i<40;i++){
+    const d = document.createElement("div");
+    d.className = "confetti";
+    d.style.left = Math.random()*100+"vw";
+    d.style.background = colors[i%colors.length];
+    d.style.animationDuration = (1.6+Math.random()*1.2)+"s";
+    d.style.opacity = String(0.7+Math.random()*0.3);
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(), 3000);
+  }
+}
+function trackDone(lo,hi){
+  const ms = MISSIONS.filter(m=>{ const n=parseInt(m.num,10); return n>=lo && n<=hi; });
+  return ms.length>0 && ms.every(m=> m.nTasks>0 && doneCount(m)>=m.nTasks);
+}
+const ACHIEVEMENTS = [
+  {id:"first-blood", icon:"🩸", title:"First Blood", desc:"Complete your first task", test:()=> Object.values(progress).some(a=>a.length>0)},
+  {id:"track1", icon:"🥉", title:"Track 1 Complete", desc:"Finish missions 00–12", test:()=> trackDone(0,12)},
+  {id:"track2", icon:"🥈", title:"Track 2 Complete", desc:"Finish missions 13–21", test:()=> trackDone(13,21)},
+  {id:"track3", icon:"🥇", title:"Track 3 Complete", desc:"Finish missions 22–30", test:()=> trackDone(22,30)},
+  {id:"track4", icon:"🏆", title:"Track 4 Complete", desc:"Finish missions 31–37", test:()=> trackDone(31,37)},
+  {id:"boss-slayer", icon:"⚔️", title:"Boss Slayer", desc:"Clear a boss-fight mission", test:()=> [...BOSS_NUMS].some(n=>{ const m=MISSIONS.find(x=>x.num===n); return m && m.nTasks>0 && doneCount(m)>=m.nTasks; })},
+  {id:"streak-3", icon:"🔥", title:"On a Roll", desc:"3-day completion streak", test:()=> streak.count>=3},
+  {id:"streak-7", icon:"🌋", title:"Unstoppable", desc:"7-day completion streak", test:()=> streak.count>=7},
+  {id:"night-owl", icon:"🦉", title:"Night Owl", desc:"Complete a task after midnight", test:(ctx)=> !!ctx && ctx.hour>=0 && ctx.hour<5},
+  {id:"completionist", icon:"👑", title:"Completionist", desc:"100% of the gauntlet", test:()=>{ let t=0,d=0; MISSIONS.forEach(m=>{t+=m.nTasks; d+=doneCount(m);}); return t>0 && d>=t; }},
+];
+function checkAchievements(ctx){
+  ACHIEVEMENTS.forEach(a=>{
+    if(earned.includes(a.id)) return;
+    if(a.test(ctx)){
+      earned.push(a.id); saveAch();
+      AudioEngine.sting("achievement");
+      toast(`🏅 ${a.title}`, a.desc, "epic");
+    }
+  });
+}
+function renderAchievements(){
+  const el = document.getElementById("achList");
+  if(!el) return;
+  el.innerHTML = ACHIEVEMENTS.map(a=>{
+    const got = earned.includes(a.id);
+    return `<div class="ach${got?" earned":""}"><div class="aicon">${a.icon}</div>
+      <div class="atext"><b>${a.title}</b><span>${got? a.desc : "🔒 "+a.desc}</span></div></div>`;
+  }).join("");
+}
+function openAchModal(){ renderAchievements(); document.getElementById("achModal").classList.remove("hidden"); }
+
+const TRACK_DEFS = [
+  {name:"Track 1 — Understand & Direct AI Engineering", lo:0, hi:12},
+  {name:"Track 2 — Build the Full LLM", lo:13, hi:21},
+  {name:"Track 3 — Multimodal + Agent", lo:22, hi:30},
+  {name:"Track 4 — Ship to Production", lo:31, hi:37},
+];
 function renderHome(){
   document.getElementById("mission").classList.add("hidden");
   document.getElementById("home").classList.remove("hidden");
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
   let total=0, done=0;
-  MISSIONS.forEach(m=>{
-    total += m.nTasks; done += doneCount(m);
-    const p = pct(m);
-    const card = document.createElement("div");
-    card.className="card";
-    card.innerHTML = `<div class="num">MISSION ${m.num}</div>
-      <div class="t">${m.title}</div>
-      <div class="ring"><i style="width:${p}%"></i></div>
-      <div class="pct">${doneCount(m)}/${m.nTasks} tasks · ${p}%</div>`;
-    card.onclick = ()=>openMission(m.num);
-    grid.appendChild(card);
+  const nextM = MISSIONS.find(x=>doneCount(x)<x.nTasks);
+  TRACK_DEFS.forEach(track=>{
+    const ms = MISSIONS.filter(m=>{ const n=parseInt(m.num,10); return n>=track.lo && n<=track.hi; });
+    if(!ms.length) return;
+    let tt=0, td=0;
+    const section = document.createElement("div");
+    section.className = "track-section";
+    const head = document.createElement("div");
+    head.className = "track-head";
+    const pathWrap = document.createElement("div");
+    pathWrap.className = "track-path grid";
+    ms.forEach(m=>{
+      total += m.nTasks; done += doneCount(m); tt += m.nTasks; td += doneCount(m);
+      const p = pct(m);
+      const isDone = m.nTasks>0 && doneCount(m)>=m.nTasks;
+      const isNext = !!nextM && m.num===nextM.num;
+      const boss = isBoss(m.num);
+      const card = document.createElement("div");
+      card.className = "card" + (isDone?" done":"") + (isNext?" next":"") + (boss?" boss":"");
+      card.innerHTML = `<div class="num">MISSION ${m.num}</div>
+        <div class="t">${m.title}</div>
+        <div class="ring"><i style="width:${p}%"></i></div>
+        <div class="pct">${doneCount(m)}/${m.nTasks} tasks · ${p}%</div>`;
+      card.onclick = ()=>openMission(m.num);
+      pathWrap.appendChild(card);
+    });
+    const tp = tt? Math.round(td/tt*100):0;
+    head.innerHTML = `<h3>${track.name}</h3><span class="tpct">${td}/${tt} · ${tp}%</span>`;
+    section.appendChild(head);
+    section.appendChild(pathWrap);
+    grid.appendChild(section);
   });
   document.getElementById("overall").textContent =
     `Overall: ${total? Math.round(done/total*100):0}%  (${done}/${total})`;
+  renderXPBar();
 }
 
 function missionTrack(num){ const n=parseInt(num,10);
@@ -522,23 +736,36 @@ const AudioEngine = (function(){
     stop(){ if(!ctx||!on) return; on=false;
       gain.gain.cancelScheduledValues(ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.0, ctx.currentTime+0.8); },
-    // short one-shot chime/whoosh per moment (plays regardless of ambient toggle)
+    // short one-shot chime/whoosh per moment. intro/track/finale always play (rare, ceremonial);
+    // frequent game-feel stings (task/mission/levelup/achievement/boss) respect the audio toggle.
     sting(kind){
+      const ALWAYS = new Set(["intro","track","finale"]);
+      if(!ALWAYS.has(kind) && localStorage.getItem("gauntlet.audio")!=="1") return;
       try {
         if(!ctx) build(); if(ctx.state==="suspended") ctx.resume();
         const t0=ctx.currentTime, out=ctx.destination;
-        const seq = kind==="finale" ? [523.25,659.25,783.99,1046.5] :
-                    kind==="track"  ? [392.0,523.25,659.25] :
-                                       [261.63,392.0,523.25];
+        const SEQ = {
+          finale:      [523.25,659.25,783.99,1046.5],
+          track:       [392.0,523.25,659.25],
+          boss:        [130.81,146.83,164.81],
+          mission:     [523.25,659.25,783.99],
+          levelup:     [392.0,523.25,659.25,880.0,1046.5],
+          achievement: [659.25,987.77],
+          task:        [880.0],
+        };
+        const seq = SEQ[kind] || [261.63,392.0,523.25];
+        const peak = kind==="task" ? 0.14 : 0.25;
+        const tail = kind==="task" ? 0.18 : 0.5;
         seq.forEach((f,i)=>{
           const o=ctx.createOscillator(), g=ctx.createGain();
           o.type = i===0?"sine":"triangle"; o.frequency.value=f;
           const ts=t0+i*0.12;
           g.gain.setValueAtTime(0.0001, ts);
-          g.gain.exponentialRampToValueAtTime(0.25, ts+0.02);
-          g.gain.exponentialRampToValueAtTime(0.0001, ts+0.5);
-          o.connect(g); g.connect(out); o.start(ts); o.stop(ts+0.55);
+          g.gain.exponentialRampToValueAtTime(peak, ts+0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ts+tail);
+          o.connect(g); g.connect(out); o.start(ts); o.stop(ts+tail+0.05);
         });
+        if(kind==="task") return; // skip the whoosh tail for the frequent, tiny tick sound
         // soft whoosh noise tail
         const buf=ctx.createBuffer(1, ctx.sampleRate*0.4, ctx.sampleRate);
         const dat=buf.getChannelData(0);
@@ -574,16 +801,19 @@ function playIntro(){
 }
 function playDivider(num){
   if(localStorage.getItem("gauntlet.lean")==="1"){ renderMissionNow(num); return; }
+  const boss = isBoss(num);
   const ov = document.createElement("div");
-  ov.className="divider";
+  ov.className = "divider" + (boss?" boss":"");
   ov.innerHTML = `<div class="ring"></div>${HERO_VISUAL(num)}
     <div class="mtitle">${MISSION_TITLE(num)}</div>
     <div class="mtrack">${missionTrack(num)}</div>
+    ${boss? '<div class="boss-tag">⚔ BOSS FIGHT ⚔</div>' : ''}
     <div class="skip" onclick="renderMissionNow('${num}')">tap to skip →</div>`;
   document.body.appendChild(ov);
   AudioEngine.start();
+  if(boss) AudioEngine.sting("boss");
   ov.onclick=(e)=>{ if(e.target===ov||e.target.classList.contains("skip")) renderMissionNow(num); };
-  setTimeout(()=>{ if(document.body.contains(ov)) renderMissionNow(num); }, DIVIDER_MS);
+  setTimeout(()=>{ if(document.body.contains(ov)) renderMissionNow(num); }, boss? DIVIDER_MS+800 : DIVIDER_MS);
 }
 function MISSION_TITLE(num){ const m=MISSIONS.find(x=>x.num===num); return m? m.title : num; }
 
@@ -604,8 +834,9 @@ function renderMissionNow(num){
   document.getElementById("home").classList.add("hidden");
   const el = document.getElementById("mission");
   el.classList.remove("hidden");
+  const boss = isBoss(num);
   let html = `<div class="back" onclick="renderHome()">← All missions</div>`;
-  html += `<div class="hero">${HERO_VISUAL(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}</div></div>`;
+  html += `<div class="hero${boss?' boss':''}">${HERO_VISUAL(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}${boss?' · <span style="color:var(--red);font-weight:700">⚔ BOSS FIGHT</span>':''}</div></div>`;
   html += m.html;
   if(m.prompts.length){
     html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>`;
@@ -635,10 +866,25 @@ function renderMissionNow(num){
     if(checked) inp.closest('li.task').classList.add('done');
     inp.onchange = ()=>{
       progress[m.num] = progress[m.num]||[];
-      if(inp.checked){ if(!progress[m.num].includes(tid)) progress[m.num].push(tid);
-        inp.closest('li.task').classList.add('done'); }
+      const li = inp.closest('li.task');
+      if(inp.checked){
+        if(!progress[m.num].includes(tid)) progress[m.num].push(tid);
+        li.classList.add('done');
+        li.classList.remove('just-done'); void li.offsetWidth; li.classList.add('just-done');
+        burst(inp);
+        AudioEngine.sting("task");
+        addXP(10);
+        bumpStreak();
+        checkAchievements({hour:new Date().getHours()});
+        if(doneCount(m) >= m.nTasks){
+          AudioEngine.sting("mission");
+          confettiBurst();
+          toast(`✅ Mission ${m.num} complete`, m.title, "gold");
+          addXP(25);
+        }
+      }
       else { progress[m.num] = progress[m.num].filter(x=>x!==tid);
-        inp.closest('li.task').classList.remove('done'); }
+        li.classList.remove('done'); }
       save();
       // finale video when the last mission (30) is fully complete
       if(m.num==="30" && (progress["30"]||[]).length >= m.nTasks){
@@ -812,7 +1058,13 @@ function nextMission(num){
   if(nx) openMission(nx.num); else { alert("🎉 Gauntlet complete, Engineer."); renderHome(); }
 }
 function resetProgress(){
-  if(confirm("Reset all progress? (keeps the workbook)")){ progress={}; save(); renderHome(); }
+  if(confirm("Reset all progress? (keeps the workbook)")){
+    progress={}; save();
+    xp=0; saveXP();
+    streak={date:null,count:0}; saveStreak();
+    earned=[]; saveAch();
+    renderHome();
+  }
 }
 function openAIModal(){
   document.getElementById("aiProvider").value = ai.provider||"opencode";
@@ -930,6 +1182,8 @@ document.getElementById("aiGear").onclick = openAIModal;
 document.getElementById("aiCancel").onclick = ()=>document.getElementById("aiModal").classList.add("hidden");
 document.getElementById("aiSave").onclick = saveAISettings;
 document.getElementById("aiProvider").onchange = applyPreset;
+document.getElementById("achBtn").onclick = openAchModal;
+document.getElementById("achClose").onclick = ()=>document.getElementById("achModal").classList.add("hidden");
 function playTour(){
   let m = MISSIONS.find(x=>doneCount(x)<x.nTasks) || MISSIONS[0];
   openMission(m.num); window.scrollTo(0,0);
@@ -937,6 +1191,7 @@ function playTour(){
 mergeAdded();
 playIntro();
 renderHome();
+checkAchievements({hour:new Date().getHours()}); // pick up anything earlier progress already qualifies for
 </script>
 </body>
 </html>
