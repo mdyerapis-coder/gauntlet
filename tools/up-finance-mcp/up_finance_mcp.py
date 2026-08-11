@@ -8,6 +8,7 @@ import urllib.parse
 import urllib.request
 from collections import defaultdict
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -22,7 +23,7 @@ def _api_token() -> str:
         return token
     # Hermes deliberately filters most environment variables from MCP
     # subprocesses, so read the owner-only Hermes .env as a fallback.
-    env_path = os.environ.get("HERMES_ENV_PATH", "/srv/hermes-stack/state/hermes-home/.env")
+    env_path = os.environ.get("HERMES_ENV_PATH", str(Path.home() / ".hermes" / ".env"))
     try:
         for line in open(env_path, encoding="utf-8"):
             line = line.strip()

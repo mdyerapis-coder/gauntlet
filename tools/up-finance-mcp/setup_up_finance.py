@@ -7,7 +7,7 @@ import os
 import stat
 from pathlib import Path
 
-ENV_PATH = Path(os.environ.get("HERMES_HOME", "/srv/hermes-stack/state/hermes-home")) / ".env"
+ENV_PATH = Path(os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))) / ".env"
 
 
 def main() -> int:
