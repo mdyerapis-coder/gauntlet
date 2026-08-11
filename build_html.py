@@ -191,7 +191,7 @@ TEMPLATE = r"""<!DOCTYPE html>
   .done-box{background:rgba(63,185,80,.08);border:1px solid var(--green);border-radius:10px;
     padding:12px;margin:16px 0;color:#bff0c4}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
-  .hidden{display:none}
+  .hidden{display:none!important}
   .banner{background:rgba(88,166,255,.08);border:1px solid var(--accent);border-radius:10px;
     padding:12px 14px;margin:12px 0;color:#cfe3ff;font-size:14px}
   footer{color:var(--dim);font-size:12px;text-align:center;margin-top:30px}
@@ -467,6 +467,7 @@ function HERO_VISUAL(num){
 // Between-track video breaks. Drop media/track1-2.mp4, track2-3.mp4, finale.mp4
 // into the unzipped folder; they play fullscreen when you reach a new track (or finish).
 const TRACK_VIDEO = { "13":"media/track1-2.mp4", "22":"media/track2-3.mp4", "31":"media/track3-4.mp4" };
+const DIVIDER_MS = 2200; // how long the cinematic mission divider shows before auto-advancing
 function playTrackVideo(num, onDone){
   const src = TRACK_VIDEO[num];
   if(!src){ onDone(); return; }
@@ -611,7 +612,7 @@ function renderMissionNow(num){
     m.prompts.forEach((p,idx)=>{
       html += `<div class="prompt" id="prompt${idx}">${escapeHtml(p)}</div>`;
       html += `<div style="margin:6px 0 12px">
-        <button onclick="copyPrompt(${idx})">Copy prompt ${idx+1}</button>
+        <button onclick="copyPrompt(${idx}, event)">Copy prompt ${idx+1}</button>
         <button class="primary" onclick="runWithAI(${idx})">▶ Run with AI</button>
         <span class="status" id="aiStatus${idx}"></span></div>`;
       html += `<div class="ai-result hidden" id="aiResult${idx}"></div>`;
@@ -648,11 +649,11 @@ function renderMissionNow(num){
   window.scrollTo(0,0);
 }
 
-function copyPrompt(idx){
+function copyPrompt(idx, evt){
   const txt = document.getElementById("prompt"+idx).innerText;
+  const btn = evt && evt.target;
   navigator.clipboard.writeText(txt).then(()=>{
-    event.target.textContent = "✓ Copied!";
-    setTimeout(()=>event.target.textContent=`Copy prompt ${idx+1}`,1400);
+    if(btn){ btn.textContent = "✓ Copied!"; setTimeout(()=>btn.textContent=`Copy prompt ${idx+1}`,1400); }
   }).catch(()=>{ alert(txt); });
 }
 
@@ -815,9 +816,13 @@ function resetProgress(){
 }
 function openAIModal(){
   document.getElementById("aiProvider").value = ai.provider||"opencode";
-  document.getElementById("aiBase").value = ai.baseUrl||"";
   document.getElementById("aiKey").value = ai.apiKey||"";
-  document.getElementById("aiModel").value = ai.model||"";
+  if(ai.baseUrl){
+    document.getElementById("aiBase").value = ai.baseUrl;
+    document.getElementById("aiModel").value = ai.model||"";
+  } else {
+    applyPreset(); // first-time open: auto-fill Base URL/Model for the selected provider
+  }
   document.getElementById("aiModal").classList.remove("hidden");
 }
 function applyPreset(){
