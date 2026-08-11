@@ -49,12 +49,18 @@ def _get(path: str, params: dict[str, str] | None = None) -> dict[str, Any]:
         return json.load(response)
 
 
+def _api_boundary(value: str, end: bool = False) -> str:
+    if "T" in value:
+        return value
+    return f"{value}T{'23:59:59' if end else '00:00:00'}Z"
+
+
 def _transactions(start: str | None, end: str | None) -> list[dict[str, Any]]:
     params: dict[str, str] = {"page[size]": "100"}
     if start:
-        params["filter[since]"] = start
+        params["filter[since]"] = _api_boundary(start)
     if end:
-        params["filter[until]"] = end
+        params["filter[until]"] = _api_boundary(end, end=True)
 
     records: list[dict[str, Any]] = []
     path = "/transactions"
