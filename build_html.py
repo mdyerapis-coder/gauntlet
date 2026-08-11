@@ -242,6 +242,14 @@ TEMPLATE = r"""<!DOCTYPE html>
   kbd{background:#0b0f14;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
   /* AI coder */
   .gear{position:absolute;right:18px;top:16px}
+  .ai-badge{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:5px;vertical-align:middle;background:var(--dim)}
+  .ai-badge.ok{background:var(--green);box-shadow:0 0 6px rgba(63,185,80,.7)}
+  .ai-badge.fail{background:var(--red);box-shadow:0 0 6px rgba(248,81,73,.7)}
+  .ai-badge.off{background:var(--dim)}
+  .test-status{font-size:12px;margin-top:8px;min-height:16px}
+  .test-status.ok{color:var(--green)}
+  .test-status.fail{color:var(--red)}
+  .test-status.pending{color:var(--yellow)}
   .ai-result{background:#0b0f14;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;
     white-space:pre-wrap;font-size:13px;max-height:420px;overflow:auto}
   .codeblk{background:#0b0f14;border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;
@@ -345,7 +353,8 @@ TEMPLATE = r"""<!DOCTYPE html>
 <header>
   <h1>🛡️ The Agent Engineer's Gauntlet</h1>
   <div class="sub">Apprenticeship edition — AI writes the scripts, <b>you</b> direct &amp; understand. Click a mission to play.</div>
-  <button class="gear" id="aiGear" title="Configure AI coder">⚙ AI Coder</button>
+  <button class="gear" id="aiGear" title="Configure AI coder">⚙ AI Coder <span class="ai-badge" id="aiBadge"></span></button>
+  <button class="gear" id="howBtn" style="right:170px" title="How this works">❓ How to play</button>
 </header>
 <div class="wrap">
   <div id="home">
@@ -389,7 +398,9 @@ TEMPLATE = r"""<!DOCTYPE html>
     <label>Model</label>
     <input id="aiModel" placeholder="anthropic/claude-3.5-sonnet">
     <div class="hint">OpenRouter model list: openrouter.ai/models. OpenCode uses whatever model you configured in its provider.</div>
+    <div class="test-status" id="aiTestStatus"></div>
     <div class="row">
+      <button id="aiTest">🔌 Test connection</button>
       <button id="aiCancel">Cancel</button>
       <button class="primary" id="aiSave">Save</button>
     </div>
@@ -402,6 +413,28 @@ TEMPLATE = r"""<!DOCTYPE html>
     <h3 style="margin-top:0">🏆 Achievements</h3>
     <div class="ach-list" id="achList"></div>
     <div class="row"><button id="achClose">Close</button></div>
+  </div>
+</div>
+
+<!-- How to play modal -->
+<div id="howModal" class="modal hidden">
+  <div class="box">
+    <h3 style="margin-top:0">❓ How this actually works</h3>
+    <p style="color:#cdd6e0">This isn't a game that plays itself in the browser — it's a workbook that directs
+      <b>you</b> and an AI coding tool you already use (Claude Code, ChatGPT, Codex, Cursor, whatever). The loop,
+      every mission:</p>
+    <ol style="color:#cdd6e0;padding-left:20px;line-height:1.7">
+      <li><b>Read the mission.</b> The 🎯/🧠/🧩 blocks tell you what you're doing and why, in plain English.</li>
+      <li><b>Copy the 🤖 prompt</b> (the purple box near the bottom) and paste it into your AI coding tool —
+        that's the primary button. It's written for AI to read, not for you to run yourself.</li>
+      <li><b>Run whatever your AI tool gives you back</b>, in your own terminal, the way you always do.</li>
+      <li><b>Tick the checkboxes</b> as you complete each step, and fill in the ✍️ "Your move" part yourself —
+        that's the one bit no AI can do for you.</li>
+    </ol>
+    <p style="color:#cdd6e0">The <b>▶ Run with AI</b> button on each prompt is optional — it runs the prompt
+      right here in the browser, but only once you've configured a provider via <b>⚙ AI Coder</b> (top-right).
+      Most people skip it and just copy/paste. No AI Coder key? You can do the entire gauntlet without one.</p>
+    <div class="row"><button class="primary" id="howClose">Got it</button></div>
   </div>
 </div>
 
@@ -883,12 +916,16 @@ function renderMissionNow(num){
   html += `<div class="hero${boss?' boss':''}">${HERO_VISUAL(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}${boss?' · <span style="color:var(--red);font-weight:700">⚔ BOSS FIGHT</span>':''}</div></div>`;
   html += m.html;
   if(m.prompts.length){
-    html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>`;
+    html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>
+      <div class="hint" style="margin-bottom:10px">This is what you hand your AI coder — Claude Code, ChatGPT, Codex, Cursor, whatever
+      you use day to day. <b>Copy it</b> and paste it there, then run whatever it gives you back in your own terminal. (The
+      <b>▶ Run with AI</b> button is an optional shortcut that runs it right here in the browser — only works once you've set up a
+      provider via <b>⚙ AI Coder</b> up top; skip it if you haven't.)</div>`;
     m.prompts.forEach((p,idx)=>{
       html += `<div class="prompt" id="prompt${idx}">${escapeHtml(p)}</div>`;
       html += `<div style="margin:6px 0 12px">
-        <button onclick="copyPrompt(${idx}, event)">Copy prompt ${idx+1}</button>
-        <button class="primary" onclick="runWithAI(${idx})">▶ Run with AI</button>
+        <button class="primary" onclick="copyPrompt(${idx}, event)">Copy prompt ${idx+1}</button>
+        <button onclick="runWithAI(${idx})">▶ Run with AI (optional)</button>
         <span class="status" id="aiStatus${idx}"></span></div>`;
       html += `<div class="ai-result hidden" id="aiResult${idx}"></div>`;
     });
@@ -953,9 +990,53 @@ function aiConfigured(){
   if(ai.provider==='opencode' || ai.provider==='local') return true; // local may need no key
   return !!ai.apiKey;
 }
+function renderAIBadge(){
+  const el = document.getElementById("aiBadge");
+  if(!el) return;
+  if(ai.lastTestOk===true){ el.className="ai-badge ok"; el.title="AI Coder: connected ✓ (tested)"; }
+  else if(ai.lastTestOk===false){ el.className="ai-badge fail"; el.title="AI Coder: last connection test failed"; }
+  else if(aiConfigured()){ el.className="ai-badge off"; el.title="AI Coder: configured, not tested yet — click ⚙ then Test connection"; }
+  else { el.className="ai-badge off"; el.title="AI Coder: not set up — optional, you can copy prompts instead"; }
+}
+let lastTest = null; // {snapshot, ok} — tracks the most recent "Test connection" result, not yet necessarily saved
+function aiFieldSnapshot(){
+  return JSON.stringify({
+    provider: document.getElementById("aiProvider").value,
+    baseUrl: document.getElementById("aiBase").value.trim(),
+    apiKey: document.getElementById("aiKey").value.trim(),
+    model: document.getElementById("aiModel").value.trim()
+  });
+}
+async function testAIConnection(){
+  const st = document.getElementById("aiTestStatus");
+  const snapshot = aiFieldSnapshot();
+  const pending = JSON.parse(snapshot);
+  const prevAI = ai;
+  ai = pending; // test exactly what's currently in the form, whether or not it's been saved yet
+  st.className = "test-status pending"; st.textContent = "Testing…";
+  await new Promise(resolve => {
+    runAI("Reply with exactly one word.", "Say OK.",
+      (text)=>{
+        ai = prevAI; // don't persist anything just from testing — that's Save's job
+        lastTest = {snapshot, ok:true};
+        st.className = "test-status ok";
+        st.textContent = "✓ Connected — got a reply: " + text.trim().slice(0,60);
+        resolve();
+      },
+      (err)=>{
+        ai = prevAI;
+        lastTest = {snapshot, ok:false};
+        st.className = "test-status fail";
+        st.textContent = "✗ " + err;
+        resolve();
+      });
+  });
+}
 async function runAI(system, user, onText, onError){
   if(!aiConfigured()){
-    onError("Open ⚙ AI Coder and set a provider/endpoint first.");
+    onError("Not set up yet — that's fine, you don't need this. Click \"Copy prompt\" above instead "+
+            "and paste it into your own AI coding tool. (Or set up a provider via ⚙ AI Coder, top-right, "+
+            "to run it here instead.)");
     return;
   }
   const status = document.createElement("span");
@@ -1119,6 +1200,8 @@ function openAIModal(){
   } else {
     applyPreset(); // first-time open: auto-fill Base URL/Model for the selected provider
   }
+  const st = document.getElementById("aiTestStatus");
+  st.className = "test-status"; st.textContent = "";
   document.getElementById("aiModal").classList.remove("hidden");
 }
 function applyPreset(){
@@ -1135,16 +1218,12 @@ function applyPreset(){
   document.getElementById("aiModel").value=pr.model;
 }
 function saveAISettings(){
-  ai = {
-    provider: document.getElementById("aiProvider").value,
-    baseUrl: document.getElementById("aiBase").value.trim(),
-    apiKey: document.getElementById("aiKey").value.trim(),
-    model: document.getElementById("aiModel").value.trim()
-  };
+  const snapshot = aiFieldSnapshot();
+  ai = JSON.parse(snapshot);
+  ai.lastTestOk = (lastTest && lastTest.snapshot === snapshot) ? lastTest.ok : undefined;
   saveAI();
+  renderAIBadge();
   document.getElementById("aiModal").classList.add("hidden");
-  const ok = aiConfigured();
-  document.getElementById("overall").textContent = ok ? "AI coder ready ✓" : "AI not configured";
 }
 
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -1225,9 +1304,15 @@ function toggleLean(){
 document.getElementById("aiGear").onclick = openAIModal;
 document.getElementById("aiCancel").onclick = ()=>document.getElementById("aiModal").classList.add("hidden");
 document.getElementById("aiSave").onclick = saveAISettings;
+document.getElementById("aiTest").onclick = testAIConnection;
 document.getElementById("aiProvider").onchange = applyPreset;
 document.getElementById("achBtn").onclick = openAchModal;
 document.getElementById("achClose").onclick = ()=>document.getElementById("achModal").classList.add("hidden");
+document.getElementById("howBtn").onclick = ()=>document.getElementById("howModal").classList.remove("hidden");
+document.getElementById("howClose").onclick = ()=>{
+  document.getElementById("howModal").classList.add("hidden");
+  localStorage.setItem("gauntlet.seenHowTo","1");
+};
 function playTour(){
   let m = MISSIONS.find(x=>doneCount(x)<x.nTasks) || MISSIONS[0];
   openMission(m.num); window.scrollTo(0,0);
@@ -1235,7 +1320,11 @@ function playTour(){
 mergeAdded();
 playIntro();
 renderHome();
+renderAIBadge();
 checkAchievements({hour:new Date().getHours()}); // pick up anything earlier progress already qualifies for
+if(localStorage.getItem("gauntlet.seenHowTo")!=="1"){
+  document.getElementById("howModal").classList.remove("hidden");
+}
 </script>
 </body>
 </html>
