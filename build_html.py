@@ -172,6 +172,10 @@ def build():
         })
     data = json.dumps(missions, ensure_ascii=False)
     html_doc = TEMPLATE.replace("/*__MISSIONS__*/", data)
+    xterm_js = (WORK / "vendor" / "xterm.js").read_text(encoding="utf-8")
+    xterm_css = (WORK / "vendor" / "xterm.css").read_text(encoding="utf-8")
+    html_doc = html_doc.replace("/*__XTERM_JS__*/", xterm_js)
+    html_doc = html_doc.replace("/*__XTERM_CSS__*/", xterm_css)
     out = WORK / "gauntlet.html"
     out.write_text(html_doc, encoding="utf-8")
     print(f"Wrote {out}  ({out.stat().st_size//1024} KB, {len(missions)} missions)")
@@ -346,6 +350,18 @@ TEMPLATE = r"""<!DOCTYPE html>
   .ach.earned .aicon{filter:none;opacity:1}
   .ach .atext b{display:block;font-size:13px}
   .ach .atext span{font-size:11px;color:var(--dim)}
+  /* ---- Embedded terminal (xterm.js + local WebSocket bridge to a real shell) ---- */
+  /*__XTERM_CSS__*/
+  .term-panel{background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden}
+  .term-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none}
+  .term-head h4{margin:0;font-size:14px;color:var(--magenta)}
+  .term-status{font-size:11px;color:var(--dim)}
+  .term-status.live{color:var(--green)}
+  .term-status.err{color:var(--red)}
+  .term-body{display:none;padding:0 12px 12px}
+  .term-panel.open .term-body{display:block}
+  .term-hint{font-size:11px;color:var(--dim);margin:0 0 8px}
+  .term-xterm{height:340px;background:#000;border-radius:8px;padding:6px}
 </style>
 </head>
 <body>
@@ -438,6 +454,9 @@ TEMPLATE = r"""<!DOCTYPE html>
   </div>
 </div>
 
+<script>
+/*__XTERM_JS__*/
+</script>
 <script>
 const MISSIONS = /*__MISSIONS__*/;
 const KEY = "gauntlet.progress.v1";
@@ -587,6 +606,7 @@ const TRACK_DEFS = [
   {name:"Track 4 — Ship to Production", lo:31, hi:37},
 ];
 function renderHome(){
+  closeTerminal();
   document.getElementById("mission").classList.add("hidden");
   document.getElementById("home").classList.remove("hidden");
   const grid = document.getElementById("grid");
@@ -861,6 +881,72 @@ const AudioEngine = (function(){
   };
 })();
 
+/* ---------------- Embedded terminal: xterm.js + local WebSocket bridge to a real shell ---------------- */
+const TERM_WS_URL = "ws://localhost:8842";
+let termInstance = null, termSocket = null;
+function setTermStatus(text, cls){
+  const el = document.getElementById("termStatus");
+  if(el){ el.textContent = text; el.className = "term-status" + (cls? " "+cls : ""); }
+}
+function toggleTerminal(){
+  const panel = document.getElementById("termPanel");
+  if(!panel) return;
+  const opening = !panel.classList.contains("open");
+  panel.classList.toggle("open");
+  if(opening) connectTerminal(); else closeTerminal();
+}
+function connectTerminal(){
+  if(termSocket) return; // already connecting/connected
+  const box = document.getElementById("termXterm");
+  if(!box || typeof Terminal === "undefined") return;
+  box.innerHTML = "";
+  termInstance = new Terminal({
+    rows: 20, cols: 100, convertEol: true, cursorBlink: true, fontSize: 13,
+    fontFamily: "ui-monospace, Menlo, Consolas, monospace",
+    theme: { background: "#000000", foreground: "#d7dee6" }
+  });
+  termInstance.open(box);
+  setTermStatus("connecting…", "");
+  termInstance.writeln("connecting to " + TERM_WS_URL + " ...");
+  let ws;
+  try { ws = new WebSocket(TERM_WS_URL); }
+  catch(e){ setTermStatus("failed", "err"); termInstance.writeln("failed to open socket: " + e.message); return; }
+  ws.binaryType = "arraybuffer";
+  termSocket = ws;
+  const sendResize = () => {
+    if(ws.readyState === WebSocket.OPEN && termInstance){
+      ws.send(JSON.stringify({type:"resize", rows: termInstance.rows, cols: termInstance.cols}));
+    }
+  };
+  ws.onopen = () => {
+    setTermStatus("connected ✓", "live");
+    termInstance.writeln("\x1b[2mconnected — this is a real shell on your machine.\x1b[0m\r\n");
+    sendResize();
+  };
+  ws.onmessage = (ev) => {
+    const data = ev.data instanceof ArrayBuffer ? new Uint8Array(ev.data) : ev.data;
+    termInstance.write(data);
+  };
+  ws.onclose = () => {
+    setTermStatus("disconnected", "err");
+    if(termInstance) termInstance.writeln("\r\n\x1b[2m[disconnected]\x1b[0m");
+    termSocket = null;
+  };
+  ws.onerror = () => {
+    setTermStatus("not running — start it locally", "err");
+    if(termInstance) termInstance.writeln(
+      "\r\nCouldn't reach " + TERM_WS_URL + ".\r\nRun this in a terminal first:\r\n  python3 gauntlet-terminal.py\r\n(then reopen this panel)");
+  };
+  termInstance.onData((data) => { if(ws.readyState === WebSocket.OPEN) ws.send(new TextEncoder().encode(data)); });
+  termInstance.onResize(sendResize);
+}
+function closeTerminal(){
+  if(termSocket){ try{ termSocket.close(); }catch(e){} termSocket = null; }
+  if(termInstance){ try{ termInstance.dispose(); }catch(e){} termInstance = null; }
+  const panel = document.getElementById("termPanel");
+  if(panel) panel.classList.remove("open");
+}
+
 // Intro video on first launch (once per browser). media/intro.mp4; SVG fallback if missing.
 function playIntro(){
   if(localStorage.getItem("gauntlet.intro")==="1") return;
@@ -904,6 +990,7 @@ function openMission(num){
 }
 function renderMissionNow(num){
   AudioEngine.stop();
+  closeTerminal();
   const old=document.querySelector(".divider"); if(old) old.remove();
   const m = MISSIONS.find(x=>x.num===num);
   if(!m) return;
@@ -914,6 +1001,18 @@ function renderMissionNow(num){
   const boss = isBoss(num);
   let html = `<div class="back" onclick="renderHome()">← All missions</div>`;
   html += `<div class="hero${boss?' boss':''}">${HERO_VISUAL(num)}<div class="htext"><b>${escapeHtml(m.title)}</b><br>${missionTrack(num)}${boss?' · <span style="color:var(--red);font-weight:700">⚔ BOSS FIGHT</span>':''}</div></div>`;
+  html += `<div class="term-panel" id="termPanel">
+    <div class="term-head" onclick="toggleTerminal()">
+      <h4>▶ Terminal</h4>
+      <span class="term-status" id="termStatus">click to open</span>
+    </div>
+    <div class="term-body">
+      <div class="term-hint">A real shell on this machine, right here. Needs <code>python3 gauntlet-terminal.py</code>
+        running locally first (127.0.0.1:8842 — same idea as the AI Coder proxy). Optional — you can always just use
+        your own terminal instead.</div>
+      <div class="term-xterm" id="termXterm"></div>
+    </div>
+  </div>`;
   html += m.html;
   if(m.prompts.length){
     html += `<div class="panel"><h4>🤖 AI-CODER PROMPT${m.prompts.length>1?"S":""}</h4>

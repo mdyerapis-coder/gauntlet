@@ -9,6 +9,11 @@ AI / Expand gauntlet), follow the one-time setup below.
   Click a mission → tick boxes (saved in your browser) → copy-button on every 🤖 prompt.
 - **`gauntlet-proxy.py`** — tiny same-origin CORS proxy (no deps) so the AI Coder can
   reach OpenCode Zen / cloud models from the browser without CORS blocks.
+- **`gauntlet-terminal.py`** — optional local bridge that gives the in-app **▶ Terminal**
+  panel (on every mission) a real shell to run in. No deps, Linux/macOS only. Run
+  `python3 gauntlet-terminal.py` in this folder, then expand the panel on any mission —
+  it connects to `ws://localhost:8842`, bound to 127.0.0.1 only. You don't need this; it's
+  there for when you'd rather run a command without alt-tabbing to your own terminal.
 - **`pdfs/`** — 66 Raschka code companion PDFs (*Build a Large Language Model From Scratch*).
 - `build_html.py`, `gauntlet.py`, mission `.md` — sources, if you want the terminal CLI.
 
